@@ -5,6 +5,7 @@ import { useEffect } from 'react';
 import { SidebarInset } from '@/components/ui/sidebar';
 import { AuthProvider } from '@/hooks/use-auth';
 import FirebaseErrorListener from '@/components/FirebaseErrorListener';
+import AppHeader from './app-header';
 
 const publicRoutes = ['/', '/login'];
 const authRoutes = ['/dashboard', '/applications', '/calendar', '/settings'];
@@ -45,9 +46,12 @@ function AuthWrapper({ children }: { children: React.ReactNode }) {
   }
   
   return (
-    <SidebarInset className="flex-1">
-      <FirebaseErrorListener />
-      {children}
+    <SidebarInset className="flex-1 flex flex-col">
+       <AppHeader />
+       <div className="flex-1">
+        <FirebaseErrorListener />
+        {children}
+      </div>
     </SidebarInset>
   );
 }

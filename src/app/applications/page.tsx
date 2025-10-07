@@ -1,16 +1,20 @@
+'use client';
 import PageHeader from '@/components/layout/page-header';
 import { Button } from '@/components/ui/button';
 import Link from 'next/link';
 import { PlusCircle } from 'lucide-react';
 import ApplicationsTable from '@/components/applications/applications-table';
-import { applications } from '@/lib/data';
-import type { Metadata } from 'next';
-
-export const metadata: Metadata = {
-  title: 'JobTrack - Applications',
-};
+import { getApplications } from '@/lib/storage';
+import { useEffect, useState } from 'react';
+import { Application } from '@/lib/types';
 
 export default function ApplicationsPage() {
+  const [applications, setApplications] = useState<Application[]>([]);
+
+  useEffect(() => {
+    setApplications(getApplications());
+  }, []);
+
   return (
     <div className="flex flex-col gap-4">
       <PageHeader

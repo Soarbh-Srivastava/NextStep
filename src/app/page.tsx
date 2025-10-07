@@ -1,3 +1,4 @@
+'use client';
 import {
   Card,
   CardContent,
@@ -13,18 +14,22 @@ import PageHeader from '@/components/layout/page-header';
 
 import {
   analyticsData,
-  applications,
   funnelData,
   weeklyData,
 } from '@/lib/data';
+import { getApplications } from '@/lib/storage';
 import { Activity, Briefcase, Target, Clock } from 'lucide-react';
-import type { Metadata } from 'next';
+import { useEffect, useState } from 'react';
+import { Application } from '@/lib/types';
 
-export const metadata: Metadata = {
-  title: 'JobTrack - Dashboard',
-};
 
 export default function Dashboard() {
+  const [applications, setApplications] = useState<Application[]>([]);
+
+  useEffect(() => {
+    setApplications(getApplications());
+  }, []);
+
   const totalApplications = applications.length;
   const totalOffers = applications.filter(
     (app) => app.status === 'OFFER'

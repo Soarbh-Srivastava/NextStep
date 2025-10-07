@@ -1,4 +1,5 @@
-import { applications } from '@/lib/data';
+'use client';
+import { getApplicationById } from '@/lib/storage';
 import { notFound } from 'next/navigation';
 import PageHeader from '@/components/layout/page-header';
 import { Badge } from '@/components/ui/badge';
@@ -22,21 +23,7 @@ import {
 import { format, formatDistanceToNow } from 'date-fns';
 import { Application, ApplicationStatus } from '@/lib/types';
 import ApplicationTimeline from '@/components/applications/application-timeline';
-import type { Metadata } from 'next';
-
-type Props = {
-  params: { id: string };
-};
-
-export function generateMetadata({ params }: Props): Metadata {
-  const application = applications.find((app) => app.id === params.id);
-  if (!application) {
-    return { title: 'Application Not Found' };
-  }
-  return {
-    title: `JobTrack - ${application.title} at ${application.companyName}`,
-  };
-}
+import { useEffect, useState } from 'react';
 
 const statusColors: Record<ApplicationStatus, string> = {
     APPLIED: 'bg-blue-100 text-blue-800 dark:bg-blue-900 dark:text-blue-200 border-blue-300',
@@ -50,7 +37,18 @@ const statusColors: Record<ApplicationStatus, string> = {
 
 
 export default function ApplicationDetailPage({ params }: { params: { id: string } }) {
-  const application = applications.find((app) => app.id === params.id);
+  const [application, setApplication] = useState<Application | null | undefined>(undefined);
+
+  useEffect(() => {
+    const app = getApplicationById(params.id);
+    setApplication(app);
+  }, [params.id]);
+
+
+  if (application === undefined) {
+    // Still loading
+    return <div>Loading...</div>;
+  }
 
   if (!application) {
     notFound();
@@ -84,7 +82,7 @@ export default function ApplicationDetailPage({ params }: { params: { id: string
         <div className="grid auto-rows-max items-start gap-4 md:gap-8 lg:col-span-2">
             <ApplicationTimeline events={events} />
 
-            {notes.length > 0 && (
+            {notes && notes.length > 0 && (
                 <Card>
                     <CardHeader>
                         <CardTitle>Notes</CardTitle>

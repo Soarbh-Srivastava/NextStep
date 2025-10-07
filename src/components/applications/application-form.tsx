@@ -32,6 +32,8 @@ import { cn } from '@/lib/utils';
 import { format } from 'date-fns';
 import { ApplicationStatus } from '@/lib/types';
 import { useToast } from '@/hooks/use-toast';
+import { saveApplication } from '@/lib/storage';
+import { useRouter } from 'next/navigation';
 
 const applicationSchema = z.object({
   title: z.string().min(2, 'Title must be at least 2 characters.'),
@@ -51,10 +53,12 @@ const applicationSchema = z.object({
   salary: z.string().optional(),
   url: z.string().url('Please enter a valid URL.').optional().or(z.literal('')),
   notes: z.string().optional(),
+  userId: z.string().default('user-1'), // Added default userId
 });
 
 export default function ApplicationForm() {
   const { toast } = useToast();
+  const router = useRouter();
   const form = useForm<z.infer<typeof applicationSchema>>({
     resolver: zodResolver(applicationSchema),
     defaultValues: {
@@ -71,12 +75,13 @@ export default function ApplicationForm() {
   });
 
   function onSubmit(values: z.infer<typeof applicationSchema>) {
-    console.log(values);
+    const newApplication = saveApplication(values);
     toast({
       title: 'Application Saved!',
       description: `${values.title} at ${values.companyName} has been added.`,
     });
     form.reset();
+    router.push(`/applications/${newApplication.id}`);
   }
 
   return (

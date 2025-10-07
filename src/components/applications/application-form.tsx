@@ -91,12 +91,17 @@ export default function ApplicationForm() {
     setIsSaving(true);
     try {
       const newApplication = await saveApplication({ ...values, userId: user.uid });
-      toast({
-        title: 'Application Saved!',
-        description: `${values.title} at ${values.companyName} has been added.`,
-      });
-      form.reset();
-      router.push(`/applications/${newApplication.id}`);
+      if (newApplication) {
+        toast({
+            title: 'Application Saved!',
+            description: `${values.title} at ${values.companyName} has been added.`,
+        });
+        form.reset();
+        router.push(`/applications/${newApplication.id}`);
+      } else {
+        // Error is handled by the emitter, but we might want a generic fallback toast
+        // Or we just let the destructive toast from the listener be the only feedback
+      }
     } catch (error) {
         console.error("Failed to save application:", error);
         toast({

@@ -91,7 +91,7 @@ export async function getApplicationById(id: string): Promise<Application | unde
 
 export async function saveApplication(
   applicationData: Omit<Application, 'id' | 'createdAt' | 'updatedAt' | 'events' | 'notes'> & { notes?: string }
-): Promise<Application> {
+): Promise<Application | null> {
   const now = new Date();
   const appliedAt = applicationData.appliedAt instanceof Date ? applicationData.appliedAt : new Date();
   const applicationsCollection = collection(db, 'applications');
@@ -117,6 +117,14 @@ export async function saveApplication(
     await addDoc(eventCollRef, {
         type: 'applied',
         occurredAt: Timestamp.fromDate(appliedAt),
+    }).catch(e => {
+        if (e instanceof FirestoreError && e.code === 'permission-denied') {
+            errorEmitter.emit('permission-error', new FirestorePermissionError({
+                operation: 'create',
+                path: eventCollRef.path,
+                requestResourceData: { type: 'applied', occurredAt: Timestamp.fromDate(appliedAt) }
+            }));
+        }
     });
 
     // Add initial note if present
@@ -125,13 +133,22 @@ export async function saveApplication(
         await addDoc(notesCollRef, {
             text: applicationData.notes,
             createdAt: Timestamp.fromDate(now),
+        }).catch(e => {
+            if (e instanceof FirestoreError && e.code === 'permission-denied') {
+                errorEmitter.emit('permission-error', new FirestorePermissionError({
+                    operation: 'create',
+                    path: notesCollRef.path,
+                    requestResourceData: { text: applicationData.notes, createdAt: Timestamp.fromDate(now) }
+                }));
+            }
         });
     }
 
     // Fetch the newly created application to return it
     const newApp = await getApplicationById(newId);
     if (!newApp) {
-        throw new Error("Failed to retrieve newly created application");
+        // This might happen if there's a permission error on get, which getApplicationById should handle
+        return null;
     }
     
     return newApp;
@@ -140,9 +157,11 @@ export async function saveApplication(
       if (e instanceof FirestoreError && e.code === 'permission-denied') {
         const error = new FirestorePermissionError({operation: 'create', path: applicationsCollection.path, requestResourceData: appDocData});
         errorEmitter.emit('permission-error', error);
+      } else {
+        // Re-throw other errors or handle them as needed
+        console.error("An unexpected error occurred during saveApplication:", e);
       }
-      // Re-throw other errors or handle them as needed
-      throw e;
+      return null;
   }
 }
 

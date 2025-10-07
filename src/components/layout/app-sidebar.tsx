@@ -11,13 +11,7 @@ import {
 } from '@/components/ui/sidebar';
 import { Logo } from '@/components/icons';
 import { usePathname } from 'next/navigation';
-import {
-  Home,
-  Briefcase,
-  Settings,
-  LogOut,
-  LogIn
-} from 'lucide-react';
+import { Home, Briefcase, Settings, LogOut, LogIn, Calendar } from 'lucide-react';
 import Link from 'next/link';
 import { useAuth } from '@/hooks/use-auth';
 import { auth } from '@/lib/firebase';
@@ -35,6 +29,7 @@ import {
 const navItems = [
   { href: '/', icon: <Home />, label: 'Dashboard' },
   { href: '/applications', icon: <Briefcase />, label: 'Applications' },
+  { href: '/calendar', icon: <Calendar />, label: 'Calendar' },
 ];
 
 export default function AppSidebar() {

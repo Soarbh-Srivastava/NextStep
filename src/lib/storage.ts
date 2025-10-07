@@ -17,6 +17,7 @@ import {
   updateDoc,
 } from 'firebase/firestore';
 import { errorEmitter, FirestorePermissionError } from './errors';
+import type { useToast } from '@/hooks/use-toast';
 
 // Helper to convert Firestore Timestamps to Dates in a deeply nested object
 function convertTimestampsToDates(obj: any): any {
@@ -99,7 +100,8 @@ export async function getApplicationById(id: string): Promise<Application | unde
 }
 
 export async function saveApplication(
-  applicationData: Omit<Application, 'id' | 'createdAt' | 'updatedAt' | 'events' | 'notes'> & { notes?: string }
+  applicationData: Omit<Application, 'id' | 'createdAt' | 'updatedAt' | 'events' | 'notes'> & { notes?: string },
+  toast: ReturnType<typeof useToast>['toast']
 ): Promise<Application | null> {
   if (!applicationData.userId) {
       toast({ variant: "destructive", title: "Authentication Error", description: "You must be logged in to save." });
@@ -237,6 +239,3 @@ export async function addApplicationEvent(applicationId: string, eventData: Omit
         return null;
     }
 }
-
-import { useToast } from '@/hooks/use-toast';
-const { toast } = useToast();

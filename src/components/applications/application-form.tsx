@@ -96,7 +96,7 @@ export default function ApplicationForm() {
     }
     setIsSaving(true);
     try {
-      const newApplication = await saveApplication({ ...values, userId: user.uid });
+      const newApplication = await saveApplication({ ...values, userId: user.uid }, toast);
       if (newApplication) {
         toast({
             title: 'Application Saved!',

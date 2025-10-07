@@ -3,11 +3,13 @@ import { useAuth } from '@/hooks/use-auth';
 import { usePathname, useRouter } from 'next/navigation';
 import { useEffect } from 'react';
 import { SidebarInset } from '@/components/ui/sidebar';
+import { AuthProvider } from '@/hooks/use-auth';
+import FirebaseErrorListener from '@/components/FirebaseErrorListener';
 
 const publicRoutes = ['/', '/login'];
 const authRoutes = ['/dashboard', '/applications', '/calendar', '/settings'];
 
-export default function AppContent({ children }: { children: React.ReactNode }) {
+function AuthWrapper({ children }: { children: React.ReactNode }) {
   const { user, loading } = useAuth();
   const router = useRouter();
   const pathname = usePathname();
@@ -15,9 +17,8 @@ export default function AppContent({ children }: { children: React.ReactNode }) 
   useEffect(() => {
     if (loading) return; // Wait until authentication state is resolved
 
-    const isPublic = publicRoutes.includes(pathname) || pathname.startsWith('/applications/');
-    const isAuthRoute = authRoutes.some(route => pathname.startsWith(route));
-    
+    const isAuthRoute = authRoutes.some(route => pathname.startsWith(route)) || pathname.startsWith('/applications/');
+
     if (!user && isAuthRoute) {
       router.push('/login');
     }
@@ -31,21 +32,38 @@ export default function AppContent({ children }: { children: React.ReactNode }) 
     }
 
   }, [user, loading, router, pathname]);
-
-  const isFullPage = pathname === '/login' || pathname === '/';
+  
+  const isFullPage = publicRoutes.includes(pathname);
   if (isFullPage && !user) {
     return <>{children}</>;
   }
 
-
   // Render a loading state during redirection to prevent flash of content
-  if (loading || (!user && authRoutes.some(route => pathname.startsWith(route))) || (user && pathname === '/login')) {
+  const isAuthRoute = authRoutes.some(route => pathname.startsWith(route)) || pathname.startsWith('/applications/');
+  if (loading || (!user && isAuthRoute) || (user && pathname === '/login')) {
     return <SidebarInset className="flex-1" />;
   }
   
   return (
     <SidebarInset className="flex-1">
+      <FirebaseErrorListener />
       {children}
     </SidebarInset>
   );
+}
+
+
+export default function AppContent({ children }: { children: React.ReactNode }) {
+  const pathname = usePathname();
+  const isFullPage = publicRoutes.includes(pathname);
+
+  if (isFullPage) {
+     return (
+        <AuthProvider>
+            <AuthWrapper>{children}</AuthWrapper>
+        </AuthProvider>
+     )
+  }
+  
+  return <AuthWrapper>{children}</AuthWrapper>;
 }

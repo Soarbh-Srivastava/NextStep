@@ -29,6 +29,12 @@ const nextConfig: NextConfig = {
         port: '',
         pathname: '/**',
       },
+      {
+        protocol: 'https',
+        hostname: 'i.imgpx.com',
+        port: '',
+        pathname: '/**',
+      },
     ],
   },
   serverExternalPackages: ['@genkit-ai/google-genai'],

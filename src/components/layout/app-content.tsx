@@ -40,7 +40,7 @@ function AuthWrapper({ children }: { children: React.ReactNode }) {
 
   // Render a loading state during redirection to prevent flash of content
   const isAuthRoute = authRoutes.some(route => pathname.startsWith(route)) || pathname.startsWith('/applications/');
-  if (loading || (!user && isAuthRoute) || (user && pathname === '/login')) {
+  if (loading || (!user && isAuthRoute) || (user && (pathname === '/login' || pathname === '/'))) {
     return <SidebarInset className="flex-1" />;
   }
   

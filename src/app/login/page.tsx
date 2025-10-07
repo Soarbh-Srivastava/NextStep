@@ -111,15 +111,19 @@ export default function LoginPage() {
       await signInWithEmailAndPassword(auth, values.email, values.password);
       router.push('/dashboard');
     } catch (error: any) {
+      const isInvalidCredentials = error.code === 'auth/invalid-credential' || error.code === 'auth/wrong-password';
+      
       toast({
         variant: 'destructive',
         title: 'Login Failed',
-        description:
-          error.code === 'auth/invalid-credential' || error.code === 'auth/wrong-password'
+        description: isInvalidCredentials
             ? 'Invalid email or password.'
             : error.message || 'An unexpected error occurred.',
       });
-      console.error('Error signing in:', error);
+      
+      if (!isInvalidCredentials) {
+        console.error('Error signing in:', error);
+      }
     } finally {
       setIsSubmitting(false);
     }

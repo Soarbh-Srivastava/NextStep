@@ -21,9 +21,9 @@ export default function LandingPage() {
           </Button>
         </nav>
       </header>
-      <main className="flex-1 flex flex-col">
-        <section className="flex-1 flex items-center">
-          <div className="container mx-auto px-4 sm:px-6 lg:px-8 py-20 text-center">
+      <main className="flex-1">
+        <section className="py-20 md:py-32">
+          <div className="container mx-auto px-4 sm:px-6 lg:px-8 text-center">
             <h2 className="text-4xl font-bold tracking-tight sm:text-5xl lg:text-6xl">
               Take the Next Step in Your Career
             </h2>

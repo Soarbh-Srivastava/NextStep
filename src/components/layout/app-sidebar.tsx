@@ -14,9 +14,7 @@ import { usePathname } from 'next/navigation';
 import {
   Home,
   Briefcase,
-  Mail,
   Settings,
-  UserCircle,
   LogOut,
   LogIn
 } from 'lucide-react';
@@ -37,7 +35,6 @@ import {
 const navItems = [
   { href: '/', icon: <Home />, label: 'Dashboard' },
   { href: '/applications', icon: <Briefcase />, label: 'Applications' },
-  { href: '/parse-email', icon: <Mail />, label: 'Parse Email' },
 ];
 
 export default function AppSidebar() {

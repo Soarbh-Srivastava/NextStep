@@ -35,7 +35,7 @@ import { Application, ApplicationStatus } from '@/lib/types';
 import { ArrowUpDown } from 'lucide-react';
 
 type ApplicationsTableProps = {
-  data: Application[];
+  data: Omit<Application, 'notes' | 'events'>[];
 };
 
 const statusColors: Record<ApplicationStatus, string> = {
@@ -48,7 +48,7 @@ const statusColors: Record<ApplicationStatus, string> = {
   WITHDRAWN: 'bg-pink-100 text-pink-800 dark:bg-pink-900 dark:text-pink-200',
 };
 
-const columns: ColumnDef<Application>[] = [
+const columns: ColumnDef<Omit<Application, 'notes' | 'events'>>[] = [
   {
     accessorKey: 'title',
     header: ({ column }) => {

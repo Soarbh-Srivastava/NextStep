@@ -13,7 +13,7 @@ import {
   Timestamp,
   FirestoreError,
 } from 'firebase/firestore';
-import { errorEmitter, FirestorePermissionError } from './errors';
+import { errorEmitter } from './errors';
 
 // Helper to convert Firestore Timestamps to Dates in a deeply nested object
 function convertTimestampsToDates(obj: any): any {
@@ -39,29 +39,23 @@ function convertTimestampsToDates(obj: any): any {
 }
 
 
-export async function getApplications(userId: string): Promise<Application[]> {
+export async function getApplicationsList(userId: string): Promise<Omit<Application, 'notes' | 'events'>[]> {
   if (!userId) return [];
   const q = query(collection(db, 'applications'), where('userId', '==', userId));
   try {
     const querySnapshot = await getDocs(q);
-    const applications = await Promise.all(querySnapshot.docs.map(async (docSnapshot) => {
+    const applications = querySnapshot.docs.map((docSnapshot) => {
       const data = docSnapshot.data();
       const appWithDates = convertTimestampsToDates(data);
-      const [notes, events] = await Promise.all([
-        fetchSubcollection(docSnapshot.id, 'notes'),
-        fetchSubcollection(docSnapshot.id, 'events')
-      ]);
       return {
         ...appWithDates,
         id: docSnapshot.id,
-        notes,
-        events,
-      } as Application;
-    }));
+      } as Omit<Application, 'notes' | 'events'>;
+    });
     return applications;
   } catch (e) {
     if (e instanceof FirestoreError && e.code === 'permission-denied') {
-        const error = new FirestorePermissionError('list', `applications`, e);
+        const error = new FirestorePermissionError({operation: 'list', path: `applications`});
         errorEmitter.emit('permission-error', error);
     }
     // Return empty array on error to prevent app crash
@@ -88,7 +82,7 @@ export async function getApplicationById(id: string): Promise<Application | unde
     }
   } catch (e) {
       if (e instanceof FirestoreError && e.code === 'permission-denied') {
-        const error = new FirestorePermissionError('read', docRef.path, e);
+        const error = new FirestorePermissionError({operation: 'read', path: docRef.path});
         errorEmitter.emit('permission-error', error);
       }
       return undefined;
@@ -144,7 +138,7 @@ export async function saveApplication(
 
   } catch (e) {
       if (e instanceof FirestoreError && e.code === 'permission-denied') {
-        const error = new FirestorePermissionError('write', applicationsCollection.path, e, appDocData);
+        const error = new FirestorePermissionError({operation: 'write', path: applicationsCollection.path, requestResourceData: appDocData});
         errorEmitter.emit('permission-error', error);
       }
       // Re-throw other errors or handle them as needed
@@ -159,7 +153,7 @@ async function fetchSubcollection(applicationId: string, subcollectionName: stri
         return snapshot.docs.map(doc => ({ ...convertTimestampsToDates(doc.data()), id: doc.id }));
     } catch(e) {
         if (e instanceof FirestoreError && e.code === 'permission-denied') {
-            const error = new FirestorePermissionError('list', subcollectionRef.path, e);
+            const error = new FirestorePermissionError({operation: 'list', path: subcollectionRef.path});
             errorEmitter.emit('permission-error', error);
         }
         return [];

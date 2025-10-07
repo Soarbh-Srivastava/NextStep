@@ -12,24 +12,32 @@ import FunnelChart from '@/components/dashboard/funnel-chart';
 import WeeklyApplicationsChart from '@/components/dashboard/weekly-applications-chart';
 import PageHeader from '@/components/layout/page-header';
 
-import { getApplications } from '@/lib/storage';
+import { getApplicationsList, getApplicationById } from '@/lib/storage';
 import { Activity, Briefcase, Target, Clock } from 'lucide-react';
 import { useEffect, useState } from 'react';
 import { Application, ApplicationStatus } from '@/lib/types';
 import { eachDayOfInterval, startOfWeek, endOfWeek, format, differenceInHours } from 'date-fns';
 import { useAuth } from '@/hooks/use-auth';
 
+type ApplicationListItem = Omit<Application, 'notes' | 'events'>;
+
 export default function Dashboard() {
   const { user } = useAuth();
-  const [applications, setApplications] = useState<Application[]>([]);
+  const [applications, setApplications] = useState<ApplicationListItem[]>([]);
+  const [fullApplications, setFullApplications] = useState<Application[]>([]);
   const [loading, setLoading] = useState(true);
 
   useEffect(() => {
     async function loadData() {
       if (!user) return;
       setLoading(true);
-      const apps = await getApplications(user.uid);
+      const apps = await getApplicationsList(user.uid);
       setApplications(apps);
+
+      // Fetch full details for calculations
+      const fullApps = await Promise.all(apps.map(app => getApplicationById(app.id)));
+      setFullApplications(fullApps.filter((app): app is Application => !!app));
+      
       setLoading(false);
     }
     loadData();
@@ -79,7 +87,7 @@ export default function Dashboard() {
     }, [] as { date: string, applications: number }[]).sort((a, b) => new Date(a.date).getTime() - new Date(b.date).getTime());
 
 
-  const firstResponseApplications = applications.filter(app => {
+  const firstResponseApplications = fullApplications.filter(app => {
     const firstResponseEvent = app.events?.find(e => e.type === 'first_response');
     return firstResponseEvent;
   });

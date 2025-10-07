@@ -25,11 +25,10 @@ export default function LandingPage() {
       <main className="grid md:grid-cols-2 min-h-[calc(100vh-10rem)] items-center">
         <div className="hidden md:flex items-center justify-center p-8">
             <Image
-                src="https://i.imgpx.com/en/5I3X4Zamv2T5.webp"
+                src="https://imgpx.com/FOlABmZT72og.webp"
                 alt="Person organizing job applications"
                 width={800}
                 height={600}
-                className="rounded-lg shadow-lg"
                 data-ai-hint="job search"
             />
         </div>

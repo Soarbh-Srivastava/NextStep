@@ -31,7 +31,7 @@ const nextConfig: NextConfig = {
       },
       {
         protocol: 'https',
-        hostname: 'i.imgpx.com',
+        hostname: 'imgpx.com',
         port: '',
         pathname: '/**',
       },

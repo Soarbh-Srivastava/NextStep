@@ -12,6 +12,8 @@ import {
   addDoc,
   Timestamp,
   FirestoreError,
+  writeBatch,
+  deleteDoc,
 } from 'firebase/firestore';
 import { errorEmitter, FirestorePermissionError } from './errors';
 
@@ -41,7 +43,6 @@ function convertTimestampsToDates(obj: any): any {
 
 export async function getApplicationsList(userId: string): Promise<Omit<Application, 'notes' | 'events'>[]> {
   if (!userId) {
-    // This should not happen if called correctly after auth check, but as a safeguard:
     console.warn("getApplicationsList called without a userId.");
     return [];
   }
@@ -64,7 +65,6 @@ export async function getApplicationsList(userId: string): Promise<Omit<Applicat
     } else {
         console.error("An unexpected error occurred in getApplicationsList:", e);
     }
-    // Return empty array on error to prevent app crash
     return [];
   }
 }
@@ -100,11 +100,14 @@ export async function getApplicationById(id: string): Promise<Application | unde
 export async function saveApplication(
   applicationData: Omit<Application, 'id' | 'createdAt' | 'updatedAt' | 'events' | 'notes'> & { notes?: string }
 ): Promise<Application | null> {
+  if (!applicationData.userId) {
+      console.error("saveApplication requires a userId.");
+      return null;
+  }
   const now = new Date();
   const appliedAt = applicationData.appliedAt instanceof Date ? applicationData.appliedAt : new Date();
   const applicationsCollection = collection(db, 'applications');
 
-  // Create the main application document data
   const appDocData = {
       ...applicationData,
       appliedAt: Timestamp.fromDate(appliedAt),
@@ -112,11 +115,9 @@ export async function saveApplication(
       updatedAt: Timestamp.fromDate(now),
       tags: [],
   };
-  // We handle notes and events separately
   delete (appDocData as any).notes;
 
   try {
-    // Add the application document
     const docRef = await addDoc(applicationsCollection, appDocData).catch(e => {
         if (e instanceof FirestoreError && e.code === 'permission-denied') {
             errorEmitter.emit('permission-error', new FirestorePermissionError({
@@ -125,11 +126,10 @@ export async function saveApplication(
                 requestResourceData: appDocData
             }));
         }
-        throw e; // rethrow to be caught by outer try/catch
+        throw e;
     });
     const newId = docRef.id;
 
-    // Add the initial 'applied' event
     const eventCollRef = collection(db, 'applications', newId, 'events');
     const eventData = { type: 'applied', occurredAt: Timestamp.fromDate(appliedAt) };
     await addDoc(eventCollRef, eventData).catch(e => {
@@ -142,7 +142,6 @@ export async function saveApplication(
         }
     });
 
-    // Add initial note if present
     if (applicationData.notes) {
         const notesCollRef = collection(db, 'applications', newId, 'notes');
         const noteData = { text: applicationData.notes, createdAt: Timestamp.fromDate(now) };
@@ -171,6 +170,38 @@ export async function saveApplication(
       return null;
   }
 }
+
+export async function deleteApplication(applicationId: string): Promise<boolean> {
+    const appDocRef = doc(db, 'applications', applicationId);
+    try {
+        const batch = writeBatch(db);
+
+        // Delete sub-collections first
+        const subcollections = ['notes', 'events'];
+        for (const sub of subcollections) {
+            const subcollectionRef = collection(db, 'applications', applicationId, sub);
+            const snapshot = await getDocs(subcollectionRef);
+            snapshot.docs.forEach(doc => batch.delete(doc.ref));
+        }
+
+        // Delete the main document
+        batch.delete(appDocRef);
+
+        await batch.commit();
+        return true;
+    } catch (e) {
+        if (e instanceof FirestoreError && e.code === 'permission-denied') {
+            errorEmitter.emit('permission-error', new FirestorePermissionError({
+                operation: 'delete',
+                path: appDocRef.path
+            }));
+        } else {
+            console.error("An unexpected error occurred in deleteApplication:", e);
+        }
+        return false;
+    }
+}
+
 
 async function fetchSubcollection(applicationId: string, subcollectionName: string) {
     const subcollectionRef = collection(db, 'applications', applicationId, subcollectionName);

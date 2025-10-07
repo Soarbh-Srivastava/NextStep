@@ -29,13 +29,25 @@ import {
   SelectTrigger,
   SelectValue,
 } from '@/components/ui/select';
+import {
+  AlertDialog,
+  AlertDialogAction,
+  AlertDialogCancel,
+  AlertDialogContent,
+  AlertDialogDescription,
+  AlertDialogFooter,
+  AlertDialogHeader,
+  AlertDialogTitle,
+  AlertDialogTrigger,
+} from '@/components/ui/alert-dialog';
 import { Badge } from '@/components/ui/badge';
 import { format } from 'date-fns';
 import { Application, ApplicationStatus } from '@/lib/types';
-import { ArrowUpDown } from 'lucide-react';
+import { ArrowUpDown, Trash2 } from 'lucide-react';
 
 type ApplicationsTableProps = {
   data: Omit<Application, 'notes' | 'events'>[];
+  onDelete: (applicationId: string) => void;
 };
 
 const statusColors: Record<ApplicationStatus, string> = {
@@ -48,7 +60,7 @@ const statusColors: Record<ApplicationStatus, string> = {
   WITHDRAWN: 'bg-pink-100 text-pink-800 dark:bg-pink-900 dark:text-pink-200',
 };
 
-const columns: ColumnDef<Omit<Application, 'notes' | 'events'>>[] = [
+const getColumns = (onDelete: (applicationId: string) => void): ColumnDef<Omit<Application, 'notes' | 'events'>>[] => [
   {
     accessorKey: 'title',
     header: ({ column }) => {
@@ -109,11 +121,45 @@ const columns: ColumnDef<Omit<Application, 'notes' | 'events'>>[] = [
       );
     },
   },
+  {
+    id: 'actions',
+    cell: ({ row }) => {
+      const application = row.original;
+      return (
+        <AlertDialog>
+          <AlertDialogTrigger asChild>
+            <Button variant="ghost" size="icon" className="h-8 w-8">
+              <span className="sr-only">Delete application</span>
+              <Trash2 className="h-4 w-4 text-muted-foreground" />
+            </Button>
+          </AlertDialogTrigger>
+          <AlertDialogContent>
+            <AlertDialogHeader>
+              <AlertDialogTitle>Are you absolutely sure?</AlertDialogTitle>
+              <AlertDialogDescription>
+                This action cannot be undone. This will permanently delete this
+                application and all of its associated data.
+              </AlertDialogDescription>
+            </AlertDialogHeader>
+            <AlertDialogFooter>
+              <AlertDialogCancel>Cancel</AlertDialogCancel>
+              <AlertDialogAction onClick={() => onDelete(application.id)}>
+                Delete
+              </AlertDialogAction>
+            </AlertDialogFooter>
+          </AlertDialogContent>
+        </AlertDialog>
+      );
+    },
+  },
 ];
 
-export default function ApplicationsTable({ data }: ApplicationsTableProps) {
+
+export default function ApplicationsTable({ data, onDelete }: ApplicationsTableProps) {
   const [sorting, setSorting] = React.useState<SortingState>([]);
   const [columnFilters, setColumnFilters] = React.useState<ColumnFiltersState>([]);
+  
+  const columns = React.useMemo(() => getColumns(onDelete), [onDelete]);
 
   const table = useReactTable({
     data,

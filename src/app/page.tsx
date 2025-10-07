@@ -4,7 +4,7 @@ import Link from 'next/link';
 
 export default function LandingPage() {
   return (
-    <div className="flex flex-col min-h-screen bg-background">
+    <div className="bg-background">
       <header className="container mx-auto px-4 sm:px-6 lg:px-8 h-20 flex items-center justify-between">
         <div className="flex items-center gap-2">
             <Briefcase className="w-8 h-8 text-primary" />
@@ -21,7 +21,7 @@ export default function LandingPage() {
           </Button>
         </nav>
       </header>
-      <main className="flex-1">
+      <main>
         <section className="py-20 md:py-32">
           <div className="container mx-auto px-4 sm:px-6 lg:px-8 text-center">
             <h2 className="text-4xl font-bold tracking-tight sm:text-5xl lg:text-6xl">

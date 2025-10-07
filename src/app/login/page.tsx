@@ -135,8 +135,8 @@ export default function LoginPage() {
   }
 
   return (
+    
     <div className="flex min-h-screen w-full items-center justify-center bg-background p-4">
-        <div className="flex-1"></div>
         <Card className="w-full max-w-md">
             <CardHeader className="text-center">
             <CardTitle className="text-2xl">Welcome to NextStep</CardTitle>
@@ -274,7 +274,6 @@ export default function LoginPage() {
             </div>
             </CardContent>
         </Card>
-        <div className="flex-1"></div>
     </div>
   );
 }

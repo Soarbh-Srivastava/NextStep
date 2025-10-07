@@ -95,21 +95,22 @@ export default function ApplicationForm() {
         return;
     }
     setIsSaving(true);
-    try {
-      const newApplication = await saveApplication({ ...values, userId: user.uid }, toast);
-      if (newApplication) {
-        toast({
-            title: 'Application Saved!',
-            description: `${values.title} at ${values.companyName} has been added.`,
-        });
-        form.reset();
-        router.push(`/applications/${newApplication.id}`);
-      }
-    } catch (error) {
-        // Errors are now handled by the global error listener, so we don't need a generic toast here.
-        console.error("Failed to save application:", error);
-    } finally {
-        setIsSaving(false);
+    
+    const newApplication = await saveApplication({ ...values, userId: user.uid });
+    
+    setIsSaving(false);
+
+    if (newApplication) {
+      toast({
+          title: 'Application Saved!',
+          description: `${values.title} at ${values.companyName} has been added.`,
+      });
+      form.reset();
+      router.push(`/applications/${newApplication.id}`);
+    } else {
+        // A toast for a specific failure will be shown by the FirebaseErrorListener if it's a permission issue.
+        // We might want a generic fallback toast here if saveApplication returns null for other reasons.
+        // For now, we'll rely on the console error from saveApplication.
     }
   }
 

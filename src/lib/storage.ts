@@ -17,7 +17,6 @@ import {
   updateDoc,
 } from 'firebase/firestore';
 import { errorEmitter, FirestorePermissionError } from './errors';
-import type { useToast } from '@/hooks/use-toast';
 
 // Helper to convert Firestore Timestamps to Dates in a deeply nested object
 function convertTimestampsToDates(obj: any): any {
@@ -101,10 +100,9 @@ export async function getApplicationById(id: string): Promise<Application | unde
 
 export async function saveApplication(
   applicationData: Omit<Application, 'id' | 'createdAt' | 'updatedAt' | 'events' | 'notes'> & { notes?: string },
-  toast: ReturnType<typeof useToast>['toast']
 ): Promise<Application | null> {
   if (!applicationData.userId) {
-      toast({ variant: "destructive", title: "Authentication Error", description: "You must be logged in to save." });
+      console.error("User ID is required to save an application.");
       return null;
   }
   const now = new Date();
@@ -129,7 +127,7 @@ export async function saveApplication(
                 requestResourceData: appDocData
             }));
         }
-        throw e;
+        throw e; // Re-throw to be caught by the outer try-catch
     });
     const newId = docRef.id;
 
@@ -147,24 +145,28 @@ export async function saveApplication(
     
     await batch.commit().catch(e => {
         if (e instanceof FirestoreError && e.code === 'permission-denied') {
+            // This error is harder to attribute perfectly, but we can give context.
             errorEmitter.emit('permission-error', new FirestorePermissionError({
                 operation: 'create',
-                path: `batch write for ${newId}`,
-                requestResourceData: { event: eventData, note: applicationData.notes }
+                path: `batch write for notes/events on application ${newId}`,
+                requestResourceData: { event: eventData, note: applicationData.notes ? noteData : undefined }
             }));
         }
-        throw e;
+        throw e; // Re-throw to be caught by the outer try-catch
     });
 
 
     const newApp = await getApplicationById(newId);
     if (!newApp) {
+        // This case should be rare if permissions are correct
+        console.error("Failed to fetch newly created application.");
         return null;
     }
     
     return newApp;
 
   } catch (e) {
+      // Avoid logging permission errors twice
       if (!(e instanceof FirestoreError && e.code === 'permission-denied')) {
         console.error("An unexpected error occurred during saveApplication:", e);
       }
@@ -174,10 +176,14 @@ export async function saveApplication(
 
 export async function updateApplication(applicationId: string, updates: Partial<Application>): Promise<boolean> {
     const appDocRef = doc(db, 'applications', applicationId);
-    const updateData = {
+    const updateData: Record<string, any> = {
         ...updates,
         updatedAt: Timestamp.now()
     };
+
+    // Make sure to not send undefined values to Firestore
+    Object.keys(updateData).forEach(key => updateData[key] === undefined && delete updateData[key]);
+
 
     try {
         await updateDoc(appDocRef, updateData);
@@ -215,7 +221,7 @@ export async function deleteApplication(applicationId: string): Promise<boolean>
 }
 
 
-async function fetchSubcollection(applicationId: string, subcollectionName: string) {
+async function fetchSubcollection(applicationId: string, subcollectionName: 'notes' | 'events') {
     const subcollectionRef = collection(db, 'applications', applicationId, subcollectionName);
     try {
         const snapshot = await getDocs(subcollectionRef);

@@ -196,6 +196,7 @@ export default function ApplicationForm() {
                         <SelectItem value="LinkedIn">LinkedIn</SelectItem>
                         <SelectItem value="Indeed">Indeed</SelectItem>
                         <SelectItem value="Company Site">Company Site</SelectItem>
+                        <SelectItem value="On Campus">On Campus</SelectItem>
                         <SelectItem value="Email">Email</SelectItem>
                         <SelectItem value="Referral">Referral</SelectItem>
                         <SelectItem value="Other">Other</SelectItem>

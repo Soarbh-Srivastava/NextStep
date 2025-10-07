@@ -1,0 +1,23 @@
+
+rules_version = '2';
+service cloud.firestore {
+  match /databases/{database}/documents {
+    match /applications/{applicationId} {
+      // Users can only read/write applications they own
+      allow read, create, update, delete: if request.auth != null && request.auth.uid == resource.data.userId;
+
+      // Allow creating a new application if the user is authenticated and the userId matches their own
+      allow create: if request.auth != null && request.resource.data.userId == request.auth.uid;
+
+      match /notes/{noteId} {
+        // Only the owner of the application can read/write notes
+        allow read, write: if request.auth != null && get(/databases/$(database)/documents/applications/$(applicationId)).data.userId == request.auth.uid;
+      }
+
+      match /events/{eventId} {
+        // Only the owner of the application can read/write events
+        allow read, write: if request.auth != null && get(/databases/$(database)/documents/applications/$(applicationId)).data.userId == request.auth.uid;
+      }
+    }
+  }
+}

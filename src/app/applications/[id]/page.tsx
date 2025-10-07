@@ -6,7 +6,6 @@ import { Badge } from '@/components/ui/badge';
 import {
   Card,
   CardContent,
-  CardDescription,
   CardHeader,
   CardTitle,
 } from '@/components/ui/card';
@@ -23,7 +22,7 @@ import {
 import { format, formatDistanceToNow } from 'date-fns';
 import { Application, ApplicationStatus } from '@/lib/types';
 import ApplicationTimeline from '@/components/applications/application-timeline';
-import { useEffect, useState } from 'react';
+import { useEffect, useState, use } from 'react';
 
 const statusColors: Record<ApplicationStatus, string> = {
     APPLIED: 'bg-blue-100 text-blue-800 dark:bg-blue-900 dark:text-blue-200 border-blue-300',
@@ -36,8 +35,8 @@ const statusColors: Record<ApplicationStatus, string> = {
 };
 
 
-export default function ApplicationDetailPage({ params }: { params: { id: string } }) {
-  const { id } = params;
+export default function ApplicationDetailPage({ params }: { params: Promise<{ id: string }> }) {
+  const { id } = use(params);
   const [application, setApplication] = useState<Application | null | undefined>(undefined);
 
   useEffect(() => {

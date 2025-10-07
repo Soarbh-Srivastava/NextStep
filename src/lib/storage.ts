@@ -174,20 +174,7 @@ export async function saveApplication(
 export async function deleteApplication(applicationId: string): Promise<boolean> {
     const appDocRef = doc(db, 'applications', applicationId);
     try {
-        const batch = writeBatch(db);
-
-        // Delete sub-collections first
-        const subcollections = ['notes', 'events'];
-        for (const sub of subcollections) {
-            const subcollectionRef = collection(db, 'applications', applicationId, sub);
-            const snapshot = await getDocs(subcollectionRef);
-            snapshot.docs.forEach(doc => batch.delete(doc.ref));
-        }
-
-        // Delete the main document
-        batch.delete(appDocRef);
-
-        await batch.commit();
+        await deleteDoc(appDocRef);
         return true;
     } catch (e) {
         if (e instanceof FirestoreError && e.code === 'permission-denied') {

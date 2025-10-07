@@ -29,19 +29,23 @@ export default function ApplicationsPage() {
   }, [loadData]);
   
   const handleDeleteApplication = async (applicationId: string) => {
+    // Optimistically remove the application from the UI
+    const originalApplications = [...applications];
+    setApplications(prev => prev.filter(app => app.id !== applicationId));
+
     const success = await deleteApplication(applicationId);
     if (success) {
       toast({
         title: 'Application Deleted',
         description: 'The application has been successfully removed.',
       });
-      // Refresh data
-      loadData();
     } else {
+      // If the deletion fails, revert the UI and show an error
+      setApplications(originalApplications);
       toast({
         variant: 'destructive',
         title: 'Deletion Failed',
-        description: 'Could not delete the application. Please try again.',
+        description: 'Could not delete the application. Please check permissions and try again.',
       });
     }
   };

@@ -1,33 +1,23 @@
-
 rules_version = '2';
-
 service cloud.firestore {
   match /databases/{database}/documents {
 
-    // All job applications stored in a flat collection
     match /applications/{applicationId} {
+      // READ: User must be logged in and the doc’s userId must equal their UID.
+      allow read: if request.auth != null && request.auth.uid == resource.data.userId;
 
-      // Helper function to check ownership
-      function isOwner() {
-        // On create, check the incoming data.
-        // On read/update/delete, check the existing data.
-        return request.auth.uid == (request.resource.data.userId == null ? resource.data.userId : request.resource.data.userId);
-      }
+      // CREATE: User can only create docs with their own UID.
+      allow create: if request.auth != null && request.auth.uid == request.resource.data.userId;
 
-      // Allow creating a new document if the authenticated user's UID
-      // matches the userId field being written.
-      allow create: if request.auth != null && isOwner();
+      // UPDATE: User can only update their own docs.
+      allow update: if request.auth != null && request.auth.uid == resource.data.userId;
 
-      // Allow read/update/delete only if user is authenticated
-      // and the document belongs to them.
-      allow read, update, delete: if request.auth != null && isOwner();
+      // DELETE: User can only delete their own docs.
+      allow delete: if request.auth != null && request.auth.uid == resource.data.userId;
 
-      // Secure sub-collections
-      match /notes/{noteId} {
-        allow read, write: if request.auth != null && get(/databases/$(database)/documents/applications/$(applicationId)).data.userId == request.auth.uid;
-      }
-
-      match /events/{eventId} {
+      // Sub-collections
+      match /{subcollection}/{document=**} {
+        // Allow full access to sub-collections if the user owns the parent application
         allow read, write: if request.auth != null && get(/databases/$(database)/documents/applications/$(applicationId)).data.userId == request.auth.uid;
       }
     }

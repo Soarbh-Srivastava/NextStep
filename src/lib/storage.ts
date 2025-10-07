@@ -1,6 +1,6 @@
 'use client';
 
-import { Application, ApplicationEvent, Note } from './types';
+import { Application, ApplicationEvent, Note, ApplicationStatus } from './types';
 import { db } from './firebase';
 import {
   collection,
@@ -125,7 +125,7 @@ export async function saveApplication(
         if (e instanceof FirestoreError && e.code === 'permission-denied') {
             errorEmitter.emit('permission-error', new FirestorePermissionError({
                 operation: 'create',
-                path: `${applicationsCollection.path}/${appDocData.userId}`,
+                path: `${applicationsCollection.path}/<new-id>`,
                 requestResourceData: appDocData
             }));
         }
@@ -170,6 +170,30 @@ export async function saveApplication(
       }
       return null;
   }
+}
+
+export async function updateApplication(applicationId: string, updates: Partial<Application>): Promise<boolean> {
+    const appDocRef = doc(db, 'applications', applicationId);
+    const updateData = {
+        ...updates,
+        updatedAt: Timestamp.now()
+    };
+
+    try {
+        await updateDoc(appDocRef, updateData);
+        return true;
+    } catch (e) {
+        if (e instanceof FirestoreError && e.code === 'permission-denied') {
+            errorEmitter.emit('permission-error', new FirestorePermissionError({
+                operation: 'update',
+                path: appDocRef.path,
+                requestResourceData: updateData
+            }));
+        } else {
+            console.error("An unexpected error occurred in updateApplication:", e);
+        }
+        return false;
+    }
 }
 
 export async function deleteApplication(applicationId: string): Promise<boolean> {
@@ -219,7 +243,7 @@ export async function addApplicationEvent(applicationId: string, eventData: Omit
             if (e instanceof FirestoreError && e.code === 'permission-denied') {
                 errorEmitter.emit('permission-error', new FirestorePermissionError({
                     operation: 'create',
-                    path: eventCollRef.path,
+                    path: `${eventCollRef.path}/<new-id>`,
                     requestResourceData: docData
                 }));
             }

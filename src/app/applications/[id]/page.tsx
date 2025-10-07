@@ -1,5 +1,5 @@
 'use client';
-import { getApplicationById } from '@/lib/storage';
+import { getApplicationById, updateApplication } from '@/lib/storage';
 import { notFound } from 'next/navigation';
 import PageHeader from '@/components/layout/page-header';
 import { Badge } from '@/components/ui/badge';
@@ -8,7 +8,6 @@ import {
   CardContent,
   CardHeader,
   CardTitle,
-  CardDescription
 } from '@/components/ui/card';
 import { Button } from '@/components/ui/button';
 import {
@@ -21,6 +20,7 @@ import {
   DollarSign,
   Tag,
   PlusCircle,
+  ChevronDown,
 } from 'lucide-react';
 import { format, formatDistanceToNow } from 'date-fns';
 import { Application, ApplicationStatus, ApplicationEvent } from '@/lib/types';
@@ -34,6 +34,18 @@ import {
     DialogDescription,
 } from '@/components/ui/dialog';
 import AddEventForm from '@/components/applications/add-event-form';
+import {
+    DropdownMenu,
+    DropdownMenuContent,
+    DropdownMenuItem,
+    DropdownMenuTrigger,
+} from '@/components/ui/dropdown-menu';
+import { useToast } from '@/hooks/use-toast';
+
+
+const allStatuses: ApplicationStatus[] = [
+    'APPLIED', 'VIEWED', 'PHONE_SCREEN', 'INTERVIEW', 'OFFER', 'REJECTED', 'WITHDRAWN'
+];
 
 const statusColors: Record<ApplicationStatus, string> = {
     APPLIED: 'bg-blue-100 text-blue-800 dark:bg-blue-900 dark:text-blue-200 border-blue-300',
@@ -50,6 +62,7 @@ export default function ApplicationDetailPage({ params }: { params: Promise<{ id
   const { id } = use(params);
   const [application, setApplication] = useState<Application | null | undefined>(undefined);
   const [isAddEventOpen, setIsAddEventOpen] = useState(false);
+  const { toast } = useToast();
 
   useEffect(() => {
     async function loadApplication() {
@@ -64,11 +77,37 @@ export default function ApplicationDetailPage({ params }: { params: Promise<{ id
         if (!prev) return null;
         return {
             ...prev,
-            events: [...(prev.events || []), newEvent],
+            events: [...(prev.events || []), newEvent].sort((a,b) => new Date(b.occurredAt).getTime() - new Date(a.occurredAt).getTime()),
             updatedAt: new Date(), // optimistically update the timestamp
         }
     });
   }
+
+  const handleStatusChange = async (newStatus: ApplicationStatus) => {
+    if (!application || newStatus === application.status) return;
+
+    // Optimistic update
+    const originalStatus = application.status;
+    setApplication(prev => prev ? { ...prev, status: newStatus, updatedAt: new Date() } : null);
+
+    const success = await updateApplication(id, { status: newStatus });
+
+    if (success) {
+        toast({
+            title: 'Status Updated',
+            description: `Application status changed to ${newStatus.replace('_', ' ')}.`,
+        });
+    } else {
+        // Revert on failure
+        setApplication(prev => prev ? { ...prev, status: originalStatus } : null);
+        toast({
+            variant: 'destructive',
+            title: 'Update Failed',
+            description: 'Could not update the application status.',
+        });
+    }
+  }
+
 
   if (application === undefined) {
     // Still loading
@@ -100,7 +139,21 @@ export default function ApplicationDetailPage({ params }: { params: Promise<{ id
         title={title}
         description={`at ${companyName}`}
       >
-        <Badge className={`${statusColors[status]} text-sm`}>{status.replace('_', ' ')}</Badge>
+        <DropdownMenu>
+            <DropdownMenuTrigger asChild>
+                <Button variant="ghost" className={`${statusColors[status]} text-sm`}>
+                    {status.replace('_', ' ')}
+                    <ChevronDown className="h-4 w-4 ml-2" />
+                </Button>
+            </DropdownMenuTrigger>
+            <DropdownMenuContent>
+                {allStatuses.map(s => (
+                    <DropdownMenuItem key={s} onSelect={() => handleStatusChange(s)} disabled={s === status}>
+                        {s.replace('_', ' ')}
+                    </DropdownMenuItem>
+                ))}
+            </DropdownMenuContent>
+        </DropdownMenu>
       </PageHeader>
 
       <main className="grid flex-1 items-start gap-4 p-4 sm:px-6 sm:py-0 md:gap-8 lg:grid-cols-3 xl:grid-cols-3">

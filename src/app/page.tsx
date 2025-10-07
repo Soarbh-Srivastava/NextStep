@@ -25,7 +25,7 @@ export default function LandingPage() {
       <main className="grid md:grid-cols-2 min-h-[calc(100vh-10rem)] items-center">
         <div className="hidden md:flex items-center justify-center p-8">
             <Image
-                src="https://picsum.photos/seed/job-search/800/600"
+                src="https://postimg.cc/3kSC5gnP"
                 alt="Person organizing job applications"
                 width={800}
                 height={600}

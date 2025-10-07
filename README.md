@@ -1,6 +1,6 @@
-# JobTrack
+# NextStep
 
-JobTrack is a modern, personal job application tracker designed to help you manage your job search efficiently. Keep all your application details, timelines, and important dates in one organized place.
+NextStep is a modern, personal job application tracker designed to help you manage your job search efficiently. Keep all your application details, timelines, and important dates in one organized place.
 
 ## ✨ Features
 

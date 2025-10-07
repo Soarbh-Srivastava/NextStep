@@ -6,11 +6,12 @@ import { SidebarProvider } from '@/components/ui/sidebar';
 import AppSidebar from '@/components/layout/app-sidebar';
 import { AuthProvider } from '@/hooks/use-auth';
 import AppContent from '@/components/layout/app-content';
+import FirebaseErrorListener from '@/components/FirebaseErrorListener';
 
 const inter = Inter({ subsets: ['latin'], variable: '--font-inter' });
 
 export const metadata: Metadata = {
-  title: 'JobTrack',
+  title: 'NextStep',
   description: 'A personal job-application tracker.',
 };
 
@@ -26,7 +27,10 @@ export default function RootLayout({
           <SidebarProvider>
             <div className="flex min-h-screen">
               <AppSidebar />
-              <AppContent>{children}</AppContent>
+              <AppContent>
+                <FirebaseErrorListener />
+                {children}
+              </AppContent>
             </div>
             <Toaster />
           </SidebarProvider>

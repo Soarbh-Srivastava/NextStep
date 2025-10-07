@@ -3,9 +3,9 @@ import { useAuth } from '@/hooks/use-auth';
 import { usePathname, useRouter } from 'next/navigation';
 import { useEffect } from 'react';
 import { SidebarInset } from '@/components/ui/sidebar';
-import FirebaseErrorListener from '@/components/FirebaseErrorListener';
 
-const publicRoutes = ['/login'];
+const publicRoutes = ['/', '/login'];
+const authRoutes = ['/dashboard', '/applications', '/calendar', '/settings'];
 
 export default function AppContent({ children }: { children: React.ReactNode }) {
   const { user, loading } = useAuth();
@@ -15,25 +15,36 @@ export default function AppContent({ children }: { children: React.ReactNode }) 
   useEffect(() => {
     if (loading) return; // Wait until authentication state is resolved
 
-    const isPublic = publicRoutes.includes(pathname);
-
-    if (!user && !isPublic) {
+    const isPublic = publicRoutes.includes(pathname) || pathname.startsWith('/applications/');
+    const isAuthRoute = authRoutes.some(route => pathname.startsWith(route));
+    
+    if (!user && isAuthRoute) {
       router.push('/login');
     }
     
-    if (user && isPublic) {
-      router.push('/');
+    if (user && pathname === '/login') {
+      router.push('/dashboard');
     }
+
+    if (user && pathname === '/') {
+        router.push('/dashboard');
+    }
+
   }, [user, loading, router, pathname]);
 
+  const isFullPage = pathname === '/login' || pathname === '/';
+  if (isFullPage && !user) {
+    return <>{children}</>;
+  }
+
+
   // Render a loading state during redirection to prevent flash of content
-  if (loading || (!user && !publicRoutes.includes(pathname)) || (user && publicRoutes.includes(pathname))) {
+  if (loading || (!user && authRoutes.some(route => pathname.startsWith(route))) || (user && pathname === '/login')) {
     return <SidebarInset className="flex-1" />;
   }
   
   return (
     <SidebarInset className="flex-1">
-      <FirebaseErrorListener />
       {children}
     </SidebarInset>
   );

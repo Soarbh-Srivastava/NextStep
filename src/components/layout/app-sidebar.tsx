@@ -9,9 +9,8 @@ import {
   SidebarMenuButton,
   SidebarFooter,
 } from '@/components/ui/sidebar';
-import { Logo } from '@/components/icons';
+import { Briefcase, Settings, LogOut, LogIn, Calendar, LayoutDashboard } from 'lucide-react';
 import { usePathname } from 'next/navigation';
-import { Home, Briefcase, Settings, LogOut, LogIn, Calendar } from 'lucide-react';
 import Link from 'next/link';
 import { useAuth } from '@/hooks/use-auth';
 import { auth } from '@/lib/firebase';
@@ -27,7 +26,7 @@ import {
 } from '../ui/dropdown-menu';
 
 const navItems = [
-  { href: '/', icon: <Home />, label: 'Dashboard' },
+  { href: '/dashboard', icon: <LayoutDashboard />, label: 'Dashboard' },
   { href: '/applications', icon: <Briefcase />, label: 'Applications' },
   { href: '/calendar', icon: <Calendar />, label: 'Calendar' },
 ];
@@ -40,12 +39,16 @@ export default function AppSidebar() {
     await signOut(auth);
   };
 
+  if (!user) {
+    return null; // Don't show sidebar on public pages
+  }
+
   return (
     <Sidebar>
       <SidebarHeader className="border-b border-sidebar-border">
         <div className="flex items-center gap-2 p-2">
-          <Logo className="w-8 h-8 text-primary" />
-          <span className="text-lg font-semibold">JobTrack</span>
+          <Briefcase className="w-8 h-8 text-primary" />
+          <span className="text-lg font-semibold">NextStep</span>
         </div>
       </SidebarHeader>
       <SidebarContent className="p-2">
@@ -55,7 +58,7 @@ export default function AppSidebar() {
               <SidebarMenuButton
                 asChild
                 isActive={
-                  item.href === '/'
+                  item.href === '/dashboard'
                     ? pathname === item.href
                     : pathname.startsWith(item.href)
                 }

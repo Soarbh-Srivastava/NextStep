@@ -1,186 +1,78 @@
-'use client';
-import {
-  Card,
-  CardContent,
-  CardDescription,
-  CardHeader,
-  CardTitle,
-} from '@/components/ui/card';
-import KPICard from '@/components/dashboard/kpi-card';
-import ApplicationsBySourceChart from '@/components/dashboard/applications-by-source-chart';
-import FunnelChart from '@/components/dashboard/funnel-chart';
-import WeeklyApplicationsChart from '@/components/dashboard/weekly-applications-chart';
-import PageHeader from '@/components/layout/page-header';
+import { Button } from '@/components/ui/button';
+import { ArrowRight, Briefcase, Calendar, Target } from 'lucide-react';
+import Link from 'next/link';
 
-import { getApplicationsList, getApplicationById } from '@/lib/storage';
-import { Activity, Briefcase, Target, Clock, Loader2 } from 'lucide-react';
-import { useEffect, useState } from 'react';
-import { Application, ApplicationStatus } from '@/lib/types';
-import { eachDayOfInterval, startOfWeek, endOfWeek, format, differenceInHours } from 'date-fns';
-import { useAuth } from '@/hooks/use-auth';
-
-type ApplicationListItem = Omit<Application, 'notes' | 'events'>;
-
-export default function Dashboard() {
-  const { user } = useAuth();
-  const [applications, setApplications] = useState<ApplicationListItem[]>([]);
-  const [fullApplications, setFullApplications] = useState<Application[]>([]);
-  const [loading, setLoading] = useState(true);
-
-  useEffect(() => {
-    async function loadData() {
-      if (!user) return;
-      setLoading(true);
-      const apps = await getApplicationsList(user.uid);
-      setApplications(apps);
-
-      // Fetch full details for calculations
-      const fullApps = await Promise.all(apps.map(app => getApplicationById(app.id)));
-      setFullApplications(fullApps.filter((app): app is Application => !!app));
-      
-      setLoading(false);
-    }
-    loadData();
-  }, [user]);
-
-  if (loading) {
-    return (
-      <div className="flex justify-center items-center h-64">
-        <Loader2 className="h-8 w-8 animate-spin text-muted-foreground" />
-        <p className="ml-2">Loading dashboard...</p>
-      </div>
-    );
-  }
-
-  const totalApplications = applications.length;
-  const totalOffers = applications.filter(
-    (app) => app.status === 'OFFER'
-  ).length;
-
-  const getStatusCount = (status: ApplicationStatus) => applications.filter(app => app.status === status).length;
-
-  const applicationsBySource = applications.reduce((acc, app) => {
-    const source = acc.find(s => s.source === app.sourceName);
-    if (source) {
-      source.count++;
-    } else {
-      acc.push({ source: app.sourceName, count: 1 });
-    }
-    return acc;
-  }, [] as { source: string; count: number }[]);
-
-  const funnelData = [
-    { name: 'Applied', value: totalApplications, fill: 'hsl(var(--chart-1))' },
-    { name: 'Response', value: applications.filter(app => app.status !== 'APPLIED' && app.status !== 'WITHDRAWN').length, fill: 'hsl(var(--chart-2))' },
-    { name: 'Interview', value: applications.filter(app => ['PHONE_SCREEN', 'INTERVIEW', 'OFFER'].includes(app.status)).length, fill: 'hsl(var(--chart-3))' },
-    { name: 'Offer', value: totalOffers, fill: 'hsl(var(--chart-4))' },
-  ];
-
-  const weeklyData = applications.reduce((acc, app) => {
-      const weekStart = format(startOfWeek(app.appliedAt), 'yyyy-MM-dd');
-      const weekData = acc.find(w => w.date === weekStart);
-      if (weekData) {
-        weekData.applications++;
-      } else {
-        acc.push({ date: weekStart, applications: 1 });
-      }
-      return acc;
-    }, [] as { date: string, applications: number }[]).sort((a, b) => new Date(a.date).getTime() - new Date(b.date).getTime());
-
-
-  const firstResponseApplications = fullApplications.filter(app => {
-    const firstResponseEvent = app.events?.find(e => e.type === 'first_response');
-    return firstResponseEvent;
-  });
-
-  const avgHoursToFirstResponse = firstResponseApplications.length > 0 ? firstResponseApplications.reduce((totalHours, app) => {
-      const appliedEvent = app.events?.find(e => e.type === 'applied');
-      const firstResponseEvent = app.events?.find(e => e.type === 'first_response');
-      if (appliedEvent && firstResponseEvent) {
-          return totalHours + differenceInHours(firstResponseEvent.occurredAt, appliedEvent.occurredAt);
-      }
-      return totalHours;
-  }, 0) / firstResponseApplications.length : 0;
-
-
+export default function LandingPage() {
   return (
-    <div className="flex flex-col gap-4">
-      <PageHeader
-        title="Dashboard"
-        description="Here's your job application overview."
-      />
-      <main className="grid flex-1 items-start gap-4 p-4 sm:px-6 sm:py-0 md:gap-8 lg:grid-cols-3 xl:grid-cols-3">
-        <div className="grid auto-rows-max items-start gap-4 md:gap-8 lg:col-span-3">
-          <div className="grid gap-4 sm:grid-cols-2 md:grid-cols-4 lg:grid-cols-2 xl:grid-cols-4">
-            <KPICard
-              title="Total Applications"
-              value={totalApplications}
-              icon={<Briefcase className="h-4 w-4 text-muted-foreground" />}
-            />
-            <KPICard
-              title="Offers Received"
-              value={totalOffers}
-              icon={<Target className="h-4 w-4 text-muted-foreground" />}
-              change={
-                totalApplications > 0
-                  ? `${((totalOffers / totalApplications) * 100).toFixed(1)}%`
-                  : '0%'
-              }
-              changeDescription="Offer rate"
-            />
-            <KPICard
-              title="Avg. Time to Response"
-              value={`${avgHoursToFirstResponse.toFixed(1)} hrs`}
-              icon={<Clock className="h-4 w-4 text-muted-foreground" />}
-            />
-            <KPICard
-              title="Active Applications"
-              value={
-                applications.filter(
-                  (app) =>
-                    !['OFFER', 'REJECTED', 'WITHDRAWN'].includes(app.status)
-                ).length
-              }
-              icon={<Activity className="h-4 w-4 text-muted-foreground" />}
-            />
-          </div>
-          <div className="grid gap-4 grid-cols-1 md:grid-cols-2 lg:grid-cols-7">
-            <Card className="col-span-1 lg:col-span-4">
-              <CardHeader>
-                <CardTitle>Applications per Week</CardTitle>
-                <CardDescription>
-                  A look at your application activity over time.
-                </CardDescription>
-              </CardHeader>
-              <CardContent className="pl-2">
-                <WeeklyApplicationsChart data={weeklyData} />
-              </CardContent>
-            </Card>
-            <Card className="col-span-1 lg:col-span-3">
-              <CardHeader>
-                <CardTitle>Applications by Source</CardTitle>
-                <CardDescription>
-                  Where are your applications coming from?
-                </CardDescription>
-              </CardHeader>
-              <CardContent>
-                <ApplicationsBySourceChart data={applicationsBySource} />
-              </CardContent>
-            </Card>
-          </div>
-          <Card>
-            <CardHeader>
-              <CardTitle>Application Funnel</CardTitle>
-              <CardDescription>
-                Your progress from application to offer.
-              </CardDescription>
-            </CardHeader>
-            <CardContent>
-              <FunnelChart data={funnelData} />
-            </CardContent>
-          </Card>
+    <div className="flex flex-col min-h-screen bg-background">
+      <header className="container mx-auto px-4 sm:px-6 lg:px-8 h-20 flex items-center justify-between">
+        <div className="flex items-center gap-2">
+            <Briefcase className="w-8 h-8 text-primary" />
+            <h1 className="text-2xl font-bold">NextStep</h1>
         </div>
+        <nav className="flex items-center gap-4">
+          <Button variant="ghost" asChild>
+            <Link href="/login">Log In</Link>
+          </Button>
+          <Button asChild>
+            <Link href="/login">
+              Get Started <ArrowRight className="ml-2 h-4 w-4" />
+            </Link>
+          </Button>
+        </nav>
+      </header>
+      <main className="flex-1">
+        <section className="container mx-auto px-4 sm:px-6 lg:px-8 py-20 text-center">
+          <h2 className="text-4xl font-bold tracking-tight sm:text-5xl lg:text-6xl">
+            Take the Next Step in Your Career
+          </h2>
+          <p className="mt-6 max-w-2xl mx-auto text-lg text-muted-foreground">
+            NextStep is a personal job application tracker that helps you manage your job search, stay organized, and land your dream job.
+          </p>
+          <div className="mt-10">
+            <Button size="lg" asChild>
+              <Link href="/login">
+                Start Tracking for Free <ArrowRight className="ml-2 h-5 w-5" />
+              </Link>
+            </Button>
+          </div>
+        </section>
+
+        <section className="bg-muted py-20">
+            <div className="container mx-auto px-4 sm:px-6 lg:px-8">
+                <div className="text-center mb-12">
+                    <h3 className="text-3xl font-bold">All-in-one Job Search Management</h3>
+                    <p className="mt-4 text-muted-foreground">Everything you need to stay on top of your applications.</p>
+                </div>
+                <div className="grid grid-cols-1 md:grid-cols-3 gap-8 text-center">
+                    <div className="flex flex-col items-center">
+                        <div className="flex items-center justify-center h-16 w-16 rounded-full bg-primary/10 text-primary mb-4">
+                            <Briefcase className="h-8 w-8" />
+                        </div>
+                        <h4 className="text-xl font-semibold">Track Applications</h4>
+                        <p className="mt-2 text-muted-foreground">Manage every detail of your applications, from job descriptions to timelines.</p>
+                    </div>
+                    <div className="flex flex-col items-center">
+                        <div className="flex items-center justify-center h-16 w-16 rounded-full bg-primary/10 text-primary mb-4">
+                            <Target className="h-8 w-8" />
+                        </div>
+                        <h4 className="text-xl font-semibold">Visualize Your Progress</h4>
+                        <p className="mt-2 text-muted-foreground">Use interactive charts and funnels to see how your job search is performing.</p>
+                    </div>
+                    <div className="flex flex-col items-center">
+                        <div className="flex items-center justify-center h-16 w-16 rounded-full bg-primary/10 text-primary mb-4">
+                            <Calendar className="h-8 w-8" />
+                        </div>
+                        <h4 className="text-xl font-semibold">Never Miss a Date</h4>
+                        <p className="mt-2 text-muted-foreground">Keep track of interviews and deadlines with an integrated calendar.</p>
+                    </div>
+                </div>
+            </div>
+        </section>
       </main>
+      <footer className="container mx-auto px-4 sm:px-6 lg:px-8 py-6 text-center text-muted-foreground">
+        <p>&copy; {new Date().getFullYear()} NextStep. All rights reserved.</p>
+      </footer>
     </div>
   );
 }

@@ -13,6 +13,7 @@ import { useAuth } from '@/hooks/use-auth';
 import { useRouter } from 'next/navigation';
 import { useEffect } from 'react';
 import { Chrome } from 'lucide-react';
+import Link from 'next/link';
 
 export default function LoginPage() {
   const { user, loading } = useAuth();
@@ -20,7 +21,7 @@ export default function LoginPage() {
 
   useEffect(() => {
     if (user) {
-      router.push('/');
+      router.push('/dashboard');
     }
   }, [user, router]);
 
@@ -28,7 +29,7 @@ export default function LoginPage() {
     const provider = new GoogleAuthProvider();
     try {
       await signInWithPopup(auth, provider);
-      router.push('/');
+      router.push('/dashboard');
     } catch (error) {
       console.error('Error signing in with Google: ', error);
     }
@@ -42,7 +43,7 @@ export default function LoginPage() {
     <div className="flex min-h-screen flex-col items-center justify-center bg-background p-4">
       <Card className="w-full max-w-sm">
         <CardHeader className="text-center">
-          <CardTitle className="text-2xl">Welcome to JobTrack</CardTitle>
+          <CardTitle className="text-2xl">Welcome to NextStep</CardTitle>
           <CardDescription>
             Sign in to continue to your dashboard
           </CardDescription>
@@ -57,6 +58,11 @@ export default function LoginPage() {
               <Chrome className="mr-2 h-4 w-4" />
               Sign in with Google
             </Button>
+            <div className="text-center text-sm">
+              <Link href="/" className="underline">
+                Back to homepage
+              </Link>
+            </div>
           </div>
         </CardContent>
       </Card>

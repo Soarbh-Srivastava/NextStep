@@ -4,7 +4,7 @@ import { Card, CardContent } from '@/components/ui/card';
 import type { Metadata } from 'next';
 
 export const metadata: Metadata = {
-  title: 'JobTrack - New Application',
+  title: 'NextStep - New Application',
 };
 
 export default function NewApplicationPage() {

@@ -7,6 +7,7 @@ const subtractDays = (date: Date, days: number) => {
   return result;
 };
 
+// This is now just initial seed data for when localStorage is empty.
 export const applications: Application[] = [
   {
     id: 'app-001',
@@ -144,41 +145,3 @@ export const applications: Application[] = [
     updatedAt: subtractDays(today, 3),
   },
 ];
-
-const getStatusCount = (status: ApplicationStatus) => applications.filter(app => app.status === status).length;
-
-export const analyticsData = {
-    applicationsBySource: [
-        { source: "LinkedIn", count: 3 },
-        { source: "Indeed", count: 2 },
-        { source: "Company Site", count: 1 },
-        { source: "Email", count: 1 },
-    ],
-    funnel: {
-        applied: applications.length,
-        viewed: applications.filter(app => ['VIEWED', 'PHONE_SCREEN', 'INTERVIEW', 'OFFER', 'REJECTED'].includes(app.status)).length,
-        interview: getStatusCount('INTERVIEW') + getStatusCount('OFFER') + getStatusCount('PHONE_SCREEN'),
-        offer: getStatusCount('OFFER')
-    },
-    avgHoursToFirstResponse: 28.3,
-    weeklySeries: [
-        { week: 'Week 1', count: 2 },
-        { week: 'Week 2', count: 3 },
-        { week: 'Week 3', count: 1 },
-        { week: 'Week 4', count: 1 },
-    ],
-};
-
-export const funnelData = [
-    { name: 'Applied', value: analyticsData.funnel.applied, fill: 'hsl(var(--chart-1))' },
-    { name: 'Viewed', value: analyticsData.funnel.viewed, fill: 'hsl(var(--chart-2))' },
-    { name: 'Interview', value: analyticsData.funnel.interview, fill: 'hsl(var(--chart-3))' },
-    { name: 'Offer', value: analyticsData.funnel.offer, fill: 'hsl(var(--chart-4))' },
-]
-
-export const weeklyData = [
-    { date: '2024-06-24', applications: 2 },
-    { date: '2024-07-01', applications: 3 },
-    { date: '2024-07-08', applications: 1 },
-    { date: '2024-07-15', applications: 1 },
-]

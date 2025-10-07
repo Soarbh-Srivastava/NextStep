@@ -1,6 +1,7 @@
 'use client';
 
 import { Application, Note, ApplicationEvent } from './types';
+import { applications as seedData } from './data';
 
 const APPLICATIONS_KEY = 'jobtrack_applications';
 
@@ -25,8 +26,11 @@ function getStoredApplications(): Application[] {
       console.error('Error parsing applications from localStorage:', error);
       return [];
     }
+  } else {
+    // If no data, seed it from the data file
+    setStoredApplications(seedData);
+    return seedData;
   }
-  return [];
 }
 
 function setStoredApplications(applications: Application[]) {

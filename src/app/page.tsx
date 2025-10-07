@@ -12,16 +12,11 @@ import FunnelChart from '@/components/dashboard/funnel-chart';
 import WeeklyApplicationsChart from '@/components/dashboard/weekly-applications-chart';
 import PageHeader from '@/components/layout/page-header';
 
-import {
-  analyticsData,
-  funnelData,
-  weeklyData,
-} from '@/lib/data';
 import { getApplications } from '@/lib/storage';
 import { Activity, Briefcase, Target, Clock } from 'lucide-react';
 import { useEffect, useState } from 'react';
-import { Application } from '@/lib/types';
-
+import { Application, ApplicationStatus } from '@/lib/types';
+import { eachDayOfInterval, startOfWeek, endOfWeek, format, differenceInHours } from 'date-fns';
 
 export default function Dashboard() {
   const [applications, setApplications] = useState<Application[]>([]);
@@ -34,6 +29,52 @@ export default function Dashboard() {
   const totalOffers = applications.filter(
     (app) => app.status === 'OFFER'
   ).length;
+
+  const getStatusCount = (status: ApplicationStatus) => applications.filter(app => app.status === status).length;
+
+  const applicationsBySource = applications.reduce((acc, app) => {
+    const source = acc.find(s => s.source === app.sourceName);
+    if (source) {
+      source.count++;
+    } else {
+      acc.push({ source: app.sourceName, count: 1 });
+    }
+    return acc;
+  }, [] as { source: string; count: number }[]);
+
+  const funnelData = [
+    { name: 'Applied', value: totalApplications, fill: 'hsl(var(--chart-1))' },
+    { name: 'Viewed', value: applications.filter(app => ['VIEWED', 'PHONE_SCREEN', 'INTERVIEW', 'OFFER', 'REJECTED'].includes(app.status)).length, fill: 'hsl(var(--chart-2))' },
+    { name: 'Interview', value: getStatusCount('INTERVIEW') + getStatusCount('OFFER') + getStatusCount('PHONE_SCREEN'), fill: 'hsl(var(--chart-3))' },
+    { name: 'Offer', value: totalOffers, fill: 'hsl(var(--chart-4))' },
+  ];
+
+  const weeklyData = applications.reduce((acc, app) => {
+      const weekStart = format(startOfWeek(app.appliedAt), 'yyyy-MM-dd');
+      const weekData = acc.find(w => w.date === weekStart);
+      if (weekData) {
+        weekData.applications++;
+      } else {
+        acc.push({ date: weekStart, applications: 1 });
+      }
+      return acc;
+    }, [] as { date: string, applications: number }[]).sort((a, b) => new Date(a.date).getTime() - new Date(b.date).getTime());
+
+
+  const firstResponseApplications = applications.filter(app => {
+    const firstResponseEvent = app.events.find(e => e.type === 'first_response');
+    return firstResponseEvent;
+  });
+
+  const avgHoursToFirstResponse = firstResponseApplications.length > 0 ? firstResponseApplications.reduce((totalHours, app) => {
+      const appliedEvent = app.events.find(e => e.type === 'applied');
+      const firstResponseEvent = app.events.find(e => e.type === 'first_response');
+      if (appliedEvent && firstResponseEvent) {
+          return totalHours + differenceInHours(firstResponseEvent.occurredAt, appliedEvent.occurredAt);
+      }
+      return totalHours;
+  }, 0) / firstResponseApplications.length : 0;
+
 
   return (
     <div className="flex flex-col gap-4">
@@ -62,7 +103,7 @@ export default function Dashboard() {
             />
             <KPICard
               title="Avg. Time to Response"
-              value={`${analyticsData.avgHoursToFirstResponse.toFixed(1)} hrs`}
+              value={`${avgHoursToFirstResponse.toFixed(1)} hrs`}
               icon={<Clock className="h-4 w-4 text-muted-foreground" />}
             />
             <KPICard
@@ -96,7 +137,7 @@ export default function Dashboard() {
                 </CardDescription>
               </CardHeader>
               <CardContent>
-                <ApplicationsBySourceChart data={analyticsData.applicationsBySource} />
+                <ApplicationsBySourceChart data={applicationsBySource} />
               </CardContent>
             </Card>
           </div>

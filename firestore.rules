@@ -2,18 +2,14 @@ rules_version = '2';
 service cloud.firestore {
   match /databases/{database}/documents {
     match /applications/{applicationId} {
-      // Allow user to read, update, or delete their own application documents.
-      // The document's `userId` field must match the authenticated user's UID.
       allow read, update, delete: if request.auth != null && request.auth.uid == resource.data.userId;
+      allow create: if request.auth != null && request.auth.uid == request.resource.data.userId;
 
-      // Allow user to create a new application document.
-      // The `userId` in the new document data must match the authenticated user's UID.
-      allow create: if request.auth != null && request.resource.data.userId == request.auth.uid;
+      match /notes/{noteId} {
+        allow read, write: if request.auth != null && get(/databases/$(database)/documents/applications/$(applicationId)).data.userId == request.auth.uid;
+      }
 
-      // Rules for the 'notes' and 'events' subcollections
-      match /{subcollection}/{docId} {
-        // To access a subcollection document, the user must own the parent application.
-        // We use get() to look up the parent document and check its `userId`.
+      match /events/{eventId} {
         allow read, write: if request.auth != null && get(/databases/$(database)/documents/applications/$(applicationId)).data.userId == request.auth.uid;
       }
     }

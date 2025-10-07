@@ -71,8 +71,8 @@ export default function Dashboard() {
 
   const funnelData = [
     { name: 'Applied', value: totalApplications, fill: 'hsl(var(--chart-1))' },
-    { name: 'Viewed', value: applications.filter(app => ['VIEWED', 'PHONE_SCREEN', 'INTERVIEW', 'OFFER', 'REJECTED'].includes(app.status)).length, fill: 'hsl(var(--chart-2))' },
-    { name: 'Interview', value: getStatusCount('INTERVIEW') + getStatusCount('OFFER') + getStatusCount('PHONE_SCREEN'), fill: 'hsl(var(--chart-3))' },
+    { name: 'Response', value: applications.filter(app => app.status !== 'APPLIED' && app.status !== 'WITHDRAWN').length, fill: 'hsl(var(--chart-2))' },
+    { name: 'Interview', value: applications.filter(app => ['PHONE_SCREEN', 'INTERVIEW', 'OFFER'].includes(app.status)).length, fill: 'hsl(var(--chart-3))' },
     { name: 'Offer', value: totalOffers, fill: 'hsl(var(--chart-4))' },
   ];
 

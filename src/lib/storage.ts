@@ -84,6 +84,8 @@ export async function getApplicationById(id: string): Promise<Application | unde
       if (e instanceof FirestoreError && e.code === 'permission-denied') {
         const error = new FirestorePermissionError({operation: 'get', path: docRef.path});
         errorEmitter.emit('permission-error', error);
+      } else {
+        console.error("An unexpected error occurred in getApplicationById:", e);
       }
       return undefined;
   }
@@ -109,20 +111,27 @@ export async function saveApplication(
 
   try {
     // Add the application document
-    const docRef = await addDoc(applicationsCollection, appDocData);
+    const docRef = await addDoc(applicationsCollection, appDocData).catch(e => {
+        if (e instanceof FirestoreError && e.code === 'permission-denied') {
+            errorEmitter.emit('permission-error', new FirestorePermissionError({
+                operation: 'create',
+                path: applicationsCollection.path,
+                requestResourceData: appDocData
+            }));
+        }
+        throw e; // rethrow to be caught by outer try/catch
+    });
     const newId = docRef.id;
 
     // Add the initial 'applied' event
     const eventCollRef = collection(db, 'applications', newId, 'events');
-    await addDoc(eventCollRef, {
-        type: 'applied',
-        occurredAt: Timestamp.fromDate(appliedAt),
-    }).catch(e => {
+    const eventData = { type: 'applied', occurredAt: Timestamp.fromDate(appliedAt) };
+    await addDoc(eventCollRef, eventData).catch(e => {
         if (e instanceof FirestoreError && e.code === 'permission-denied') {
             errorEmitter.emit('permission-error', new FirestorePermissionError({
                 operation: 'create',
                 path: eventCollRef.path,
-                requestResourceData: { type: 'applied', occurredAt: Timestamp.fromDate(appliedAt) }
+                requestResourceData: eventData
             }));
         }
     });
@@ -130,35 +139,29 @@ export async function saveApplication(
     // Add initial note if present
     if (applicationData.notes) {
         const notesCollRef = collection(db, 'applications', newId, 'notes');
-        await addDoc(notesCollRef, {
-            text: applicationData.notes,
-            createdAt: Timestamp.fromDate(now),
-        }).catch(e => {
+        const noteData = { text: applicationData.notes, createdAt: Timestamp.fromDate(now) };
+        await addDoc(notesCollRef, noteData).catch(e => {
             if (e instanceof FirestoreError && e.code === 'permission-denied') {
                 errorEmitter.emit('permission-error', new FirestorePermissionError({
                     operation: 'create',
                     path: notesCollRef.path,
-                    requestResourceData: { text: applicationData.notes, createdAt: Timestamp.fromDate(now) }
+                    requestResourceData: noteData
                 }));
             }
         });
     }
 
-    // Fetch the newly created application to return it
     const newApp = await getApplicationById(newId);
     if (!newApp) {
-        // This might happen if there's a permission error on get, which getApplicationById should handle
         return null;
     }
     
     return newApp;
 
   } catch (e) {
-      if (e instanceof FirestoreError && e.code === 'permission-denied') {
-        const error = new FirestorePermissionError({operation: 'create', path: applicationsCollection.path, requestResourceData: appDocData});
-        errorEmitter.emit('permission-error', error);
-      } else {
-        // Re-throw other errors or handle them as needed
+      // This will catch the re-thrown error from the first addDoc and any other synchronous errors.
+      // The permission error is already emitted, so we just log other unexpected errors.
+      if (!(e instanceof FirestoreError && e.code === 'permission-denied')) {
         console.error("An unexpected error occurred during saveApplication:", e);
       }
       return null;
@@ -174,6 +177,8 @@ async function fetchSubcollection(applicationId: string, subcollectionName: stri
         if (e instanceof FirestoreError && e.code === 'permission-denied') {
             const error = new FirestorePermissionError({operation: 'list', path: subcollectionRef.path});
             errorEmitter.emit('permission-error', error);
+        } else {
+             console.error(`An unexpected error occurred fetching ${subcollectionName}:`, e);
         }
         return [];
     }

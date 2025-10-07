@@ -7,7 +7,7 @@ import PageHeader from '@/components/layout/page-header';
 import { Card, CardContent, CardHeader, CardTitle } from '@/components/ui/card';
 import { Loader2 } from 'lucide-react';
 import { format } from 'date-fns';
-import { utcToZonedTime } from 'date-fns-tz';
+import { toZonedTime } from 'date-fns-tz';
 import Link from 'next/link';
 
 type AugmentedEvent = ApplicationEvent & {
@@ -59,7 +59,7 @@ export default function CalendarPage() {
         const timeZone = Intl.DateTimeFormat().resolvedOptions().timeZone;
         
         return events.reduce((acc, event) => {
-            const zonedDate = utcToZonedTime(event.occurredAt, timeZone);
+            const zonedDate = toZonedTime(event.occurredAt, timeZone);
             const day = format(zonedDate, 'yyyy-MM-dd');
             if (!acc[day]) {
                 acc[day] = [];

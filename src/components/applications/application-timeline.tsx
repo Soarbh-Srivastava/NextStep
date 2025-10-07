@@ -1,6 +1,6 @@
 import { ApplicationEvent } from "@/lib/types";
 import { Card, CardContent, CardDescription, CardHeader, CardTitle } from "@/components/ui/card";
-import { CheckCircle, Circle, Briefcase, Phone, Users, Award, XCircle, Mail, MessageSquare } from "lucide-react";
+import { CheckCircle, Circle, Briefcase, Phone, Users, Award, XCircle, Mail, MessageSquare, Laptop, Code, UserCheck } from "lucide-react";
 import { format } from "date-fns";
 
 type TimelineProps = {
@@ -13,8 +13,11 @@ const eventIcons: Record<string, React.ReactNode> = {
     viewed: <CheckCircle className="h-5 w-5 text-blue-500" />,
     first_response: <Mail className="h-5 w-5 text-green-500" />,
     followed_up: <MessageSquare className="h-5 w-5" />,
-    interview_scheduled: <Users className="h-5 w-5" />,
     phone_screen_scheduled: <Phone className="h-5 w-5" />,
+    online_assessment: <Laptop className="h-5 w-5" />,
+    technical_interview: <Code className="h-5 w-5" />,
+    hr_interview: <UserCheck className="h-5 w-5" />,
+    interview_scheduled: <Users className="h-5 w-5" />,
     offer: <Award className="h-5 w-5 text-yellow-500" />,
     rejected: <XCircle className="h-5 w-5 text-red-500" />,
     withdrawn: <XCircle className="h-5 w-5 text-pink-500" />,

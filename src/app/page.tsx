@@ -21,20 +21,22 @@ export default function LandingPage() {
           </Button>
         </nav>
       </header>
-      <main className="flex-1">
-        <section className="container mx-auto px-4 sm:px-6 lg:px-8 py-20 text-center">
-          <h2 className="text-4xl font-bold tracking-tight sm:text-5xl lg:text-6xl">
-            Take the Next Step in Your Career
-          </h2>
-          <p className="mt-6 max-w-2xl mx-auto text-lg text-muted-foreground">
-            NextStep is a personal job application tracker that helps you manage your job search, stay organized, and land your dream job.
-          </p>
-          <div className="mt-10">
-            <Button size="lg" asChild>
-              <Link href="/login">
-                Start Tracking for Free <ArrowRight className="ml-2 h-5 w-5" />
-              </Link>
-            </Button>
+      <main className="flex-1 flex flex-col">
+        <section className="flex-1 flex items-center">
+          <div className="container mx-auto px-4 sm:px-6 lg:px-8 py-20 text-center">
+            <h2 className="text-4xl font-bold tracking-tight sm:text-5xl lg:text-6xl">
+              Take the Next Step in Your Career
+            </h2>
+            <p className="mt-6 max-w-2xl mx-auto text-lg text-muted-foreground">
+              NextStep is a personal job application tracker that helps you manage your job search, stay organized, and land your dream job.
+            </p>
+            <div className="mt-10">
+              <Button size="lg" asChild>
+                <Link href="/login">
+                  Start Tracking for Free <ArrowRight className="ml-2 h-5 w-5" />
+                </Link>
+              </Button>
+            </div>
           </div>
         </section>
 

@@ -19,28 +19,23 @@ class EventEmitter {
 
 export const errorEmitter = new EventEmitter();
 
+export type FirestorePermissionErrorContext = {
+    operation: 'get' | 'list' | 'create' | 'update' | 'delete';
+    path: string;
+    requestResourceData?: any;
+};
+
 // Specialized error for Firestore permission issues
 export class FirestorePermissionError extends Error {
-  public operation: 'read' | 'write' | 'delete' | 'list';
+  public operation: 'get' | 'list' | 'create' | 'update' | 'delete';
   public path: string;
   public resource?: any;
 
-  constructor(
-    operation: 'read' | 'write' | 'delete' | 'list',
-    path: string,
-    originalError: any,
-    resource?: any
-  ) {
-    super(`Firestore permission denied for ${operation} on ${path}`);
+  constructor(context: FirestorePermissionErrorContext) {
+    super(`Firestore permission denied for ${context.operation} on ${context.path}`);
     this.name = 'FirestorePermissionError';
-    this.operation = operation;
-    this.path = path;
-    this.resource = resource;
-    
-    // It's often helpful to keep the original error
-    Object.defineProperty(this, 'originalError', {
-      value: originalError,
-      enumerable: false
-    });
+    this.operation = context.operation;
+    this.path = context.path;
+    this.resource = context.requestResourceData;
   }
 }

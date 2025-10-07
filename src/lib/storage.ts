@@ -13,7 +13,7 @@ import {
   Timestamp,
   FirestoreError,
 } from 'firebase/firestore';
-import { errorEmitter } from './errors';
+import { errorEmitter, FirestorePermissionError } from './errors';
 
 // Helper to convert Firestore Timestamps to Dates in a deeply nested object
 function convertTimestampsToDates(obj: any): any {
@@ -82,7 +82,7 @@ export async function getApplicationById(id: string): Promise<Application | unde
     }
   } catch (e) {
       if (e instanceof FirestoreError && e.code === 'permission-denied') {
-        const error = new FirestorePermissionError({operation: 'read', path: docRef.path});
+        const error = new FirestorePermissionError({operation: 'get', path: docRef.path});
         errorEmitter.emit('permission-error', error);
       }
       return undefined;
@@ -138,7 +138,7 @@ export async function saveApplication(
 
   } catch (e) {
       if (e instanceof FirestoreError && e.code === 'permission-denied') {
-        const error = new FirestorePermissionError({operation: 'write', path: applicationsCollection.path, requestResourceData: appDocData});
+        const error = new FirestorePermissionError({operation: 'create', path: applicationsCollection.path, requestResourceData: appDocData});
         errorEmitter.emit('permission-error', error);
       }
       // Re-throw other errors or handle them as needed

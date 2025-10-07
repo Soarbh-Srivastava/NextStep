@@ -3,6 +3,7 @@ import { useAuth } from '@/hooks/use-auth';
 import { usePathname, useRouter } from 'next/navigation';
 import { useEffect } from 'react';
 import { SidebarInset } from '@/components/ui/sidebar';
+import FirebaseErrorListener from '@/components/FirebaseErrorListener';
 
 const publicRoutes = ['/login'];
 
@@ -25,18 +26,15 @@ export default function AppContent({ children }: { children: React.ReactNode }) 
     }
   }, [user, loading, router, pathname]);
 
-  if (loading) {
+  // Render a loading state during redirection to prevent flash of content
+  if (loading || (!user && !publicRoutes.includes(pathname)) || (user && publicRoutes.includes(pathname))) {
     return <SidebarInset className="flex-1" />;
   }
   
-  // Render a loading state during redirection to prevent flash of content
-  if (!user && !publicRoutes.includes(pathname)) {
-    return <SidebarInset className="flex-1" />;
-  }
-
-  if (user && publicRoutes.includes(pathname)) {
-      return <SidebarInset className="flex-1" />;
-  }
-
-  return <SidebarInset className="flex-1">{children}</SidebarInset>;
+  return (
+    <SidebarInset className="flex-1">
+      <FirebaseErrorListener />
+      {children}
+    </SidebarInset>
+  );
 }

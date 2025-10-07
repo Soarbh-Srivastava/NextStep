@@ -4,7 +4,6 @@ import './globals.css';
 import { Toaster } from '@/components/ui/toaster';
 import { SidebarProvider } from '@/components/ui/sidebar';
 import AppSidebar from '@/components/layout/app-sidebar';
-import FirebaseErrorListener from '@/components/FirebaseErrorListener';
 import { AuthProvider } from '@/hooks/use-auth';
 import AppContent from '@/components/layout/app-content';
 
@@ -24,14 +23,13 @@ export default function RootLayout({
     <html lang="en" suppressHydrationWarning>
       <body className={`${inter.variable} font-body antialiased`}>
         <AuthProvider>
-            <FirebaseErrorListener />
-            <SidebarProvider>
-                <div className="flex min-h-screen">
-                    <AppSidebar />
-                    <AppContent>{children}</AppContent>
-                </div>
-                <Toaster />
-            </SidebarProvider>
+          <SidebarProvider>
+            <div className="flex min-h-screen">
+              <AppSidebar />
+              <AppContent>{children}</AppContent>
+            </div>
+            <Toaster />
+          </SidebarProvider>
         </AuthProvider>
       </body>
     </html>

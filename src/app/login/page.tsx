@@ -91,15 +91,17 @@ export default function LoginPage() {
       });
       router.push('/dashboard');
     } catch (error: any) {
+      const isEmailInUse = error.code === 'auth/email-already-in-use';
       toast({
         variant: 'destructive',
         title: 'Registration Failed',
-        description:
-          error.code === 'auth/email-already-in-use'
+        description: isEmailInUse
             ? 'This email is already registered.'
             : error.message || 'An error occurred during registration.',
       });
-      console.error('Error registering user:', error);
+      if (!isEmailInUse) {
+        console.error('Error registering user:', error);
+      }
     } finally {
       setIsSubmitting(false);
     }

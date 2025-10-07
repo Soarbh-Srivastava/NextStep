@@ -1,10 +1,8 @@
 'use client';
 import PageHeader from '@/components/layout/page-header';
 import { Card, CardContent, CardDescription, CardHeader, CardTitle } from '@/components/ui/card';
-import type { Metadata } from 'next';
 import ProfileForm from '@/components/settings/profile-form';
 
-// Metadata is now client-side, so we remove the export
 // export const metadata: Metadata = {
 //   title: 'JobTrack - Settings',
 // };

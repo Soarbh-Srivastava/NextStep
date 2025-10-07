@@ -8,7 +8,9 @@ import {
   CardContent,
   CardHeader,
   CardTitle,
+  CardDescription
 } from '@/components/ui/card';
+import { Button } from '@/components/ui/button';
 import {
   Briefcase,
   Calendar,
@@ -18,11 +20,20 @@ import {
   MapPin,
   DollarSign,
   Tag,
+  PlusCircle,
 } from 'lucide-react';
 import { format, formatDistanceToNow } from 'date-fns';
-import { Application, ApplicationStatus } from '@/lib/types';
+import { Application, ApplicationStatus, ApplicationEvent } from '@/lib/types';
 import ApplicationTimeline from '@/components/applications/application-timeline';
 import { useEffect, useState, use } from 'react';
+import {
+    Dialog,
+    DialogContent,
+    DialogHeader,
+    DialogTitle,
+    DialogDescription,
+} from '@/components/ui/dialog';
+import AddEventForm from '@/components/applications/add-event-form';
 
 const statusColors: Record<ApplicationStatus, string> = {
     APPLIED: 'bg-blue-100 text-blue-800 dark:bg-blue-900 dark:text-blue-200 border-blue-300',
@@ -38,6 +49,7 @@ const statusColors: Record<ApplicationStatus, string> = {
 export default function ApplicationDetailPage({ params }: { params: Promise<{ id: string }> }) {
   const { id } = use(params);
   const [application, setApplication] = useState<Application | null | undefined>(undefined);
+  const [isAddEventOpen, setIsAddEventOpen] = useState(false);
 
   useEffect(() => {
     async function loadApplication() {
@@ -47,6 +59,16 @@ export default function ApplicationDetailPage({ params }: { params: Promise<{ id
     loadApplication();
   }, [id]);
 
+  const handleEventAdded = (newEvent: ApplicationEvent) => {
+    setApplication(prev => {
+        if (!prev) return null;
+        return {
+            ...prev,
+            events: [...(prev.events || []), newEvent],
+            updatedAt: new Date(), // optimistically update the timestamp
+        }
+    });
+  }
 
   if (application === undefined) {
     // Still loading
@@ -83,7 +105,12 @@ export default function ApplicationDetailPage({ params }: { params: Promise<{ id
 
       <main className="grid flex-1 items-start gap-4 p-4 sm:px-6 sm:py-0 md:gap-8 lg:grid-cols-3 xl:grid-cols-3">
         <div className="grid auto-rows-max items-start gap-4 md:gap-8 lg:col-span-2">
-            <ApplicationTimeline events={events || []} />
+            <ApplicationTimeline events={events || []}>
+                <Button variant="outline" size="sm" onClick={() => setIsAddEventOpen(true)}>
+                    <PlusCircle className="h-4 w-4 mr-2"/>
+                    Add Update
+                </Button>
+            </ApplicationTimeline>
 
             {notes && notes.length > 0 && (
                 <Card>
@@ -156,6 +183,21 @@ export default function ApplicationDetailPage({ params }: { params: Promise<{ id
           </Card>
         </div>
       </main>
+      <Dialog open={isAddEventOpen} onOpenChange={setIsAddEventOpen}>
+        <DialogContent>
+            <DialogHeader>
+                <DialogTitle>Add a New Timeline Event</DialogTitle>
+                <DialogDescription>
+                    Log a new update for this application.
+                </DialogDescription>
+            </DialogHeader>
+            <AddEventForm
+                applicationId={id}
+                onEventAdded={handleEventAdded}
+                onFinished={() => setIsAddEventOpen(false)}
+            />
+        </DialogContent>
+      </Dialog>
     </div>
   );
 }

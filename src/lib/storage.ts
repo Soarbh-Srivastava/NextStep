@@ -1,6 +1,6 @@
 'use client';
 
-import { Application, Note } from './types';
+import { Application, ApplicationEvent, Note } from './types';
 import { db } from './firebase';
 import {
   collection,
@@ -14,6 +14,7 @@ import {
   FirestoreError,
   writeBatch,
   deleteDoc,
+  updateDoc,
 } from 'firebase/firestore';
 import { errorEmitter, FirestorePermissionError } from './errors';
 
@@ -101,7 +102,7 @@ export async function saveApplication(
   applicationData: Omit<Application, 'id' | 'createdAt' | 'updatedAt' | 'events' | 'notes'> & { notes?: string }
 ): Promise<Application | null> {
   if (!applicationData.userId) {
-      console.error("saveApplication requires a userId.");
+      toast({ variant: "destructive", title: "Authentication Error", description: "You must be logged in to save." });
       return null;
   }
   const now = new Date();
@@ -130,31 +131,29 @@ export async function saveApplication(
     });
     const newId = docRef.id;
 
+    const batch = writeBatch(db);
+
     const eventCollRef = collection(db, 'applications', newId, 'events');
-    const eventData = { type: 'applied', occurredAt: Timestamp.fromDate(appliedAt) };
-    await addDoc(eventCollRef, eventData).catch(e => {
-        if (e instanceof FirestoreError && e.code === 'permission-denied') {
-            errorEmitter.emit('permission-error', new FirestorePermissionError({
-                operation: 'create',
-                path: eventCollRef.path,
-                requestResourceData: eventData
-            }));
-        }
-    });
+    const eventData = { type: 'applied', occurredAt: Timestamp.fromDate(appliedAt), metadata: {} };
+    batch.set(doc(eventCollRef), eventData);
 
     if (applicationData.notes) {
         const notesCollRef = collection(db, 'applications', newId, 'notes');
         const noteData = { text: applicationData.notes, createdAt: Timestamp.fromDate(now) };
-        await addDoc(notesCollRef, noteData).catch(e => {
-            if (e instanceof FirestoreError && e.code === 'permission-denied') {
-                errorEmitter.emit('permission-error', new FirestorePermissionError({
-                    operation: 'create',
-                    path: notesCollRef.path,
-                    requestResourceData: noteData
-                }));
-            }
-        });
+        batch.set(doc(notesCollRef), noteData);
     }
+    
+    await batch.commit().catch(e => {
+        if (e instanceof FirestoreError && e.code === 'permission-denied') {
+            errorEmitter.emit('permission-error', new FirestorePermissionError({
+                operation: 'create',
+                path: `batch write for ${newId}`,
+                requestResourceData: { event: eventData, note: applicationData.notes }
+            }));
+        }
+        throw e;
+    });
+
 
     const newApp = await getApplicationById(newId);
     if (!newApp) {
@@ -205,3 +204,39 @@ async function fetchSubcollection(applicationId: string, subcollectionName: stri
         return [];
     }
 }
+
+export async function addApplicationEvent(applicationId: string, eventData: Omit<ApplicationEvent, 'id' | 'applicationId'>): Promise<ApplicationEvent | null> {
+    const eventCollRef = collection(db, 'applications', applicationId, 'events');
+    const docData = {
+        ...eventData,
+        occurredAt: Timestamp.fromDate(eventData.occurredAt),
+    };
+
+    try {
+        const docRef = await addDoc(eventCollRef, docData).catch(e => {
+            if (e instanceof FirestoreError && e.code === 'permission-denied') {
+                errorEmitter.emit('permission-error', new FirestorePermissionError({
+                    operation: 'create',
+                    path: eventCollRef.path,
+                    requestResourceData: docData
+                }));
+            }
+            throw e;
+        });
+
+        // Also update the application's updatedAt timestamp
+        const appDocRef = doc(db, 'applications', applicationId);
+        await updateDoc(appDocRef, { updatedAt: Timestamp.now() });
+
+        return { ...eventData, id: docRef.id, applicationId };
+
+    } catch (e) {
+        if (!(e instanceof FirestoreError && e.code === 'permission-denied')) {
+            console.error("An unexpected error occurred during addApplicationEvent:", e);
+        }
+        return null;
+    }
+}
+
+import { useToast } from '@/hooks/use-toast';
+const { toast } = useToast();

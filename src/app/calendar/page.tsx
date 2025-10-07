@@ -52,6 +52,14 @@ const createGoogleCalendarLink = (event: AugmentedEvent) => {
     return `https://www.google.com/calendar/render?${params.toString()}`;
 };
 
+const calendarEventTypes = [
+    'phone_screen_scheduled',
+    'online_assessment',
+    'technical_interview',
+    'hr_interview',
+    'interview_scheduled',
+];
+
 
 export default function CalendarPage() {
     const { user } = useAuth();
@@ -69,13 +77,15 @@ export default function CalendarPage() {
 
             const allEvents = fullApps.flatMap(app => {
                 if (!app || !app.events) return [];
-                return app.events.map(event => ({
-                    ...event,
-                    applicationId: app.id,
-                    applicationTitle: app.title,
-                    companyName: app.companyName,
-                    location: app.location
-                }));
+                return app.events
+                    .filter(event => calendarEventTypes.includes(event.type))
+                    .map(event => ({
+                        ...event,
+                        applicationId: app.id,
+                        applicationTitle: app.title,
+                        companyName: app.companyName,
+                        location: app.location
+                    }));
             });
 
             setEvents(allEvents.sort((a,b) => new Date(a.occurredAt).getTime() - new Date(b.occurredAt).getTime()));

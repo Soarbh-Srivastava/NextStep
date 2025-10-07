@@ -274,3 +274,22 @@ export async function addApplicationEvent(applicationId: string, eventData: Omit
         return null;
     }
 }
+
+
+export async function deleteApplicationEvent(applicationId: string, eventId: string): Promise<boolean> {
+    const eventDocRef = doc(db, 'applications', applicationId, 'events', eventId);
+    try {
+        await deleteDoc(eventDocRef);
+        return true;
+    } catch (e) {
+        if (e instanceof FirestoreError && e.code === 'permission-denied') {
+            errorEmitter.emit('permission-error', new FirestorePermissionError({
+                operation: 'delete',
+                path: eventDocRef.path
+            }));
+        } else {
+            console.error("An unexpected error occurred in deleteApplicationEvent:", e);
+        }
+        return false;
+    }
+}

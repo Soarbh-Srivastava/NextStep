@@ -1,15 +1,27 @@
 'use client';
 import { useEffect, useState, useMemo } from 'react';
 import { useAuth } from '@/hooks/use-auth';
-import { getApplicationsList } from '@/lib/storage';
+import { getApplicationsList, deleteApplicationEvent } from '@/lib/storage';
 import { Application, ApplicationEvent } from '@/lib/types';
 import PageHeader from '@/components/layout/page-header';
 import { Card, CardContent, CardHeader, CardTitle } from '@/components/ui/card';
 import { Button } from '@/components/ui/button';
-import { CalendarPlus, Loader2 } from 'lucide-react';
+import { CalendarPlus, Loader2, Trash2 } from 'lucide-react';
 import { format, formatISO } from 'date-fns';
 import { toZonedTime } from 'date-fns-tz';
 import Link from 'next/link';
+import {
+    AlertDialog,
+    AlertDialogAction,
+    AlertDialogCancel,
+    AlertDialogContent,
+    AlertDialogDescription,
+    AlertDialogFooter,
+    AlertDialogHeader,
+    AlertDialogTitle,
+    AlertDialogTrigger,
+} from '@/components/ui/alert-dialog';
+import { useToast } from '@/hooks/use-toast';
 
 type AugmentedEvent = ApplicationEvent & {
     applicationTitle: string;
@@ -43,6 +55,7 @@ const createGoogleCalendarLink = (event: AugmentedEvent) => {
 
 export default function CalendarPage() {
     const { user } = useAuth();
+    const { toast } = useToast();
     const [events, setEvents] = useState<AugmentedEvent[]>([]);
     const [loading, setLoading] = useState(true);
 
@@ -70,6 +83,27 @@ export default function CalendarPage() {
         }
         loadEvents();
     }, [user]);
+
+    const handleDeleteEvent = async (applicationId: string, eventId: string) => {
+        const originalEvents = [...events];
+        setEvents(prev => prev.filter(e => e.id !== eventId));
+
+        const success = await deleteApplicationEvent(applicationId, eventId);
+        if (success) {
+            toast({
+                title: 'Event Deleted',
+                description: 'The event has been removed from your calendar.',
+            });
+        } else {
+            setEvents(originalEvents);
+            toast({
+                variant: 'destructive',
+                title: 'Deletion Failed',
+                description: 'Could not delete the event. Please try again.',
+            });
+        }
+    };
+
 
     const groupedEvents = useMemo(() => {
         const timeZone = Intl.DateTimeFormat().resolvedOptions().timeZone;
@@ -126,12 +160,36 @@ export default function CalendarPage() {
                                                             </Link>
                                                         </p>
                                                     </div>
-                                                    <Button asChild variant="outline" size="sm">
-                                                        <a href={createGoogleCalendarLink(event)} target="_blank" rel="noopener noreferrer">
-                                                            <CalendarPlus className="mr-2 h-4 w-4"/>
-                                                            Add to Calendar
-                                                        </a>
-                                                    </Button>
+                                                    <div className="flex items-center gap-2">
+                                                        <Button asChild variant="outline" size="sm">
+                                                            <a href={createGoogleCalendarLink(event)} target="_blank" rel="noopener noreferrer">
+                                                                <CalendarPlus className="mr-2 h-4 w-4"/>
+                                                                Add to Calendar
+                                                            </a>
+                                                        </Button>
+                                                        <AlertDialog>
+                                                          <AlertDialogTrigger asChild>
+                                                              <Button variant="ghost" size="icon" className="h-9 w-9 text-muted-foreground hover:text-destructive">
+                                                                  <Trash2 className="h-4 w-4" />
+                                                                  <span className="sr-only">Delete Event</span>
+                                                              </Button>
+                                                          </AlertDialogTrigger>
+                                                          <AlertDialogContent>
+                                                            <AlertDialogHeader>
+                                                              <AlertDialogTitle>Are you sure?</AlertDialogTitle>
+                                                              <AlertDialogDescription>
+                                                                This will permanently delete this event. This action cannot be undone.
+                                                              </AlertDialogDescription>
+                                                            </AlertDialogHeader>
+                                                            <AlertDialogFooter>
+                                                              <AlertDialogCancel>Cancel</AlertDialogCancel>
+                                                              <AlertDialogAction onClick={() => handleDeleteEvent(event.applicationId, event.id)}>
+                                                                Delete
+                                                              </AlertDialogAction>
+                                                            </AlertDialogFooter>
+                                                          </AlertDialogContent>
+                                                        </AlertDialog>
+                                                    </div>
                                                 </div>
                                             </CardHeader>
                                             {event.metadata?.note && (

@@ -12,8 +12,16 @@ export default function AppContent({ children }: { children: React.ReactNode }) 
   const pathname = usePathname();
 
   useEffect(() => {
-    if (!loading && !user && !publicRoutes.includes(pathname)) {
+    if (loading) return; // Wait until authentication state is resolved
+
+    const isPublic = publicRoutes.includes(pathname);
+
+    if (!user && !isPublic) {
       router.push('/login');
+    }
+    
+    if (user && isPublic) {
+      router.push('/');
     }
   }, [user, loading, router, pathname]);
 
@@ -21,12 +29,12 @@ export default function AppContent({ children }: { children: React.ReactNode }) 
     return <SidebarInset className="flex-1" />;
   }
   
+  // Render a loading state during redirection to prevent flash of content
   if (!user && !publicRoutes.includes(pathname)) {
     return <SidebarInset className="flex-1" />;
   }
 
   if (user && publicRoutes.includes(pathname)) {
-      router.push('/');
       return <SidebarInset className="flex-1" />;
   }
 

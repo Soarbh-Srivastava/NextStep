@@ -22,34 +22,34 @@ export default function LandingPage() {
           </Button>
         </nav>
       </header>
-      <main className="grid md:grid-cols-2 min-h-[calc(100vh-10rem)] items-center">
-        <div className="hidden md:flex items-center justify-center p-8">
-            <Image
-                src="https://imgpx.com/FOlABmZT72og.webp"
-                alt="Person organizing job applications"
-                width={800}
-                height={600}
-                data-ai-hint="job search"
-            />
-        </div>
-
-        <section className="py-20 md:py-32">
-          <div className="container mx-auto px-4 sm:px-6 lg:px-8 text-center md:text-left">
-            <h2 className="text-4xl font-bold tracking-tight sm:text-5xl lg:text-6xl">
-              Take the Next Step in Your Career
-            </h2>
-            <p className="mt-6 max-w-2xl mx-auto md:mx-0 text-lg text-muted-foreground">
-              NextStep is a personal job application tracker that helps you manage your job search, stay organized, and land your dream job.
-            </p>
-            <div className="mt-10">
-              <Button size="lg" asChild>
-                <Link href="/login">
-                  Start Tracking for Free <ArrowRight className="ml-2 h-5 w-5" />
-                </Link>
-              </Button>
+      <main className="container mx-auto px-4 sm:px-6 lg:px-8 py-16 md:py-24">
+        <div className="grid md:grid-cols-2 gap-12 items-center">
+            <div className="order-2 md:order-1 text-center md:text-left">
+                <h2 className="text-4xl font-bold tracking-tight sm:text-5xl lg:text-6xl">
+                Take the Next Step in Your Career
+                </h2>
+                <p className="mt-6 max-w-2xl mx-auto md:mx-0 text-lg text-muted-foreground">
+                NextStep is a personal job application tracker that helps you manage your job search, stay organized, and land your dream job.
+                </p>
+                <div className="mt-10">
+                <Button size="lg" asChild>
+                    <Link href="/login">
+                    Start Tracking for Free <ArrowRight className="ml-2 h-5 w-5" />
+                    </Link>
+                </Button>
+                </div>
             </div>
-          </div>
-        </section>
+            <div className="order-1 md:order-2 flex items-center justify-center p-8">
+                <Image
+                    src="https://imgpx.com/FOlABmZT72og.webp"
+                    alt="Person organizing job applications"
+                    width={800}
+                    height={600}
+                    data-ai-hint="job search"
+                    className="rounded-lg shadow-2xl"
+                />
+            </div>
+        </div>
       </main>
 
         <section className="bg-muted py-20">

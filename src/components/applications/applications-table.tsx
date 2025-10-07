@@ -178,20 +178,20 @@ export default function ApplicationsTable({ data, onDelete }: ApplicationsTableP
 
   return (
     <div className="w-full">
-      <div className="flex items-center py-4 gap-4">
+      <div className="flex flex-col sm:flex-row items-center py-4 gap-4">
         <Input
           placeholder="Filter by role or company..."
           value={(table.getColumn('title')?.getFilterValue() as string) ?? ''}
           onChange={(event) =>
             table.getColumn('title')?.setFilterValue(event.target.value)
           }
-          className="max-w-sm"
+          className="w-full sm:max-w-sm"
         />
         <Select
             value={(table.getColumn('status')?.getFilterValue() as string) ?? ''}
             onValueChange={(value) => table.getColumn('status')?.setFilterValue(value === 'ALL' ? '' : value)}
         >
-          <SelectTrigger className="w-[180px]">
+          <SelectTrigger className="w-full sm:w-[180px]">
             <SelectValue placeholder="Filter by status" />
           </SelectTrigger>
           <SelectContent>

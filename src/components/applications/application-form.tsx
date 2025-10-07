@@ -116,8 +116,8 @@ export default function ApplicationForm() {
 
   return (
     <Form {...form}>
-      <form onSubmit={form.handleSubmit(onSubmit)} className="space-y-8">
-        <div className="grid md:grid-cols-2 gap-8">
+      <form onSubmit={form.handleSubmit(onSubmit)} className="space-y-6">
+        <div className="grid md:grid-cols-2 gap-6">
           <FormField
             control={form.control}
             name="title"
@@ -146,7 +146,7 @@ export default function ApplicationForm() {
           />
         </div>
 
-        <div className="grid md:grid-cols-3 gap-8">
+        <div className="grid md:grid-cols-3 gap-6">
             <FormField
             control={form.control}
             name="appliedAt"
@@ -239,7 +239,7 @@ export default function ApplicationForm() {
             />
         </div>
 
-        <div className="grid md:grid-cols-2 gap-8">
+        <div className="grid md:grid-cols-2 gap-6">
           <FormField
             control={form.control}
             name="location"

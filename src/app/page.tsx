@@ -1,6 +1,7 @@
 import { Button } from '@/components/ui/button';
 import { ArrowRight, Briefcase, Calendar, Target } from 'lucide-react';
 import Link from 'next/link';
+import Image from 'next/image';
 
 export default function LandingPage() {
   return (
@@ -22,8 +23,16 @@ export default function LandingPage() {
         </nav>
       </header>
       <main className="grid md:grid-cols-2 min-h-[calc(100vh-10rem)] items-center">
-        {/* Empty left container */}
-        <div className="hidden md:block"></div>
+        <div className="hidden md:flex items-center justify-center p-8">
+            <Image
+                src="https://picsum.photos/seed/job-search/800/600"
+                alt="Person organizing job applications"
+                width={800}
+                height={600}
+                className="rounded-lg shadow-lg"
+                data-ai-hint="job search"
+            />
+        </div>
 
         <section className="py-20 md:py-32">
           <div className="container mx-auto px-4 sm:px-6 lg:px-8 text-center md:text-left">

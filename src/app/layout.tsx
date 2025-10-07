@@ -4,6 +4,7 @@ import './globals.css';
 import { Toaster } from '@/components/ui/toaster';
 import { SidebarProvider, Sidebar, SidebarInset } from '@/components/ui/sidebar';
 import AppSidebar from '@/components/layout/app-sidebar';
+import FirebaseErrorListener from '@/components/FirebaseErrorListener';
 
 const inter = Inter({ subsets: ['latin'], variable: '--font-inter' });
 
@@ -20,6 +21,7 @@ export default function RootLayout({
   return (
     <html lang="en" suppressHydrationWarning>
       <body className={`${inter.variable} font-body antialiased`}>
+        <FirebaseErrorListener />
         <SidebarProvider>
           <div className="flex min-h-screen">
             <AppSidebar />

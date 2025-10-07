@@ -11,7 +11,9 @@ import {
   doc,
   addDoc,
   Timestamp,
+  FirestoreError,
 } from 'firebase/firestore';
+import { errorEmitter, FirestorePermissionError } from './errors';
 
 // Helper to convert Firestore Timestamps to Dates in a deeply nested object
 function convertTimestampsToDates(obj: any): any {
@@ -39,28 +41,56 @@ function convertTimestampsToDates(obj: any): any {
 
 export async function getApplications(userId: string = 'user-1'): Promise<Application[]> {
   const q = query(collection(db, 'applications'), where('userId', '==', userId));
-  const querySnapshot = await getDocs(q);
-  const applications = querySnapshot.docs.map(doc => {
-    const data = doc.data();
-    const appWithDates = convertTimestampsToDates(data);
-    return {
-      ...appWithDates,
-      id: doc.id,
-    } as Application;
-  });
-  return applications;
+  try {
+    const querySnapshot = await getDocs(q);
+    const applications = await Promise.all(querySnapshot.docs.map(async (docSnapshot) => {
+      const data = docSnapshot.data();
+      const appWithDates = convertTimestampsToDates(data);
+      const [notes, events] = await Promise.all([
+        fetchSubcollection(docSnapshot.id, 'notes'),
+        fetchSubcollection(docSnapshot.id, 'events')
+      ]);
+      return {
+        ...appWithDates,
+        id: docSnapshot.id,
+        notes,
+        events,
+      } as Application;
+    }));
+    return applications;
+  } catch (e) {
+    if (e instanceof FirestoreError && e.code === 'permission-denied') {
+        const error = new FirestorePermissionError('list', `applications`, e);
+        errorEmitter.emit('permission-error', error);
+    }
+    // Return empty array on error to prevent app crash
+    return [];
+  }
 }
 
 export async function getApplicationById(id: string): Promise<Application | undefined> {
   const docRef = doc(db, 'applications', id);
-  const docSnap = await getDoc(docRef);
+  try {
+    const docSnap = await getDoc(docRef);
 
-  if (docSnap.exists()) {
-    const data = docSnap.data();
-    const appWithDates = convertTimestampsToDates(data);
-    return { ...appWithDates, id: docSnap.id } as Application;
-  } else {
-    return undefined;
+    if (docSnap.exists()) {
+      const data = docSnap.data();
+      const appWithDates = convertTimestampsToDates(data);
+      const [notes, events] = await Promise.all([
+        fetchSubcollection(id, 'notes'),
+        fetchSubcollection(id, 'events')
+      ]);
+
+      return { ...appWithDates, id: docSnap.id, notes, events } as Application;
+    } else {
+      return undefined;
+    }
+  } catch (e) {
+      if (e instanceof FirestoreError && e.code === 'permission-denied') {
+        const error = new FirestorePermissionError('read', docRef.path, e);
+        errorEmitter.emit('permission-error', error);
+      }
+      return undefined;
   }
 }
 
@@ -69,6 +99,7 @@ export async function saveApplication(
 ): Promise<Application> {
   const now = new Date();
   const appliedAt = applicationData.appliedAt instanceof Date ? applicationData.appliedAt : new Date();
+  const applicationsCollection = collection(db, 'applications');
 
   // Create the main application document data
   const appDocData = {
@@ -81,38 +112,55 @@ export async function saveApplication(
   // We handle notes and events separately
   delete (appDocData as any).notes;
 
+  try {
+    // Add the application document
+    const docRef = await addDoc(applicationsCollection, appDocData);
+    const newId = docRef.id;
 
-  // Add the application document
-  const docRef = await addDoc(collection(db, 'applications'), appDocData);
-  const newId = docRef.id;
+    // Add the initial 'applied' event
+    const eventCollRef = collection(db, 'applications', newId, 'events');
+    await addDoc(eventCollRef, {
+        type: 'applied',
+        occurredAt: Timestamp.fromDate(appliedAt),
+    });
 
-  // Add the initial 'applied' event
-  const eventCollRef = collection(db, 'applications', newId, 'events');
-  await addDoc(eventCollRef, {
-      type: 'applied',
-      occurredAt: Timestamp.fromDate(appliedAt),
-  });
+    // Add initial note if present
+    if (applicationData.notes) {
+        const notesCollRef = collection(db, 'applications', newId, 'notes');
+        await addDoc(notesCollRef, {
+            text: applicationData.notes,
+            createdAt: Timestamp.fromDate(now),
+        });
+    }
 
-  // Add initial note if present
-  if (applicationData.notes) {
-      const notesCollRef = collection(db, 'applications', newId, 'notes');
-      await addDoc(notesCollRef, {
-          text: applicationData.notes,
-          createdAt: Timestamp.fromDate(now),
-      });
+    // Fetch the newly created application to return it
+    const newApp = await getApplicationById(newId);
+    if (!newApp) {
+        throw new Error("Failed to retrieve newly created application");
+    }
+    
+    return newApp;
+
+  } catch (e) {
+      if (e instanceof FirestoreError && e.code === 'permission-denied') {
+        const error = new FirestorePermissionError('write', applicationsCollection.path, e, appDocData);
+        errorEmitter.emit('permission-error', error);
+      }
+      // Re-throw other errors or handle them as needed
+      throw e;
   }
-
-  // Fetch the newly created application to return it
-  const newApp = await getApplicationById(newId);
-  if (!newApp) {
-      throw new Error("Failed to retrieve newly created application");
-  }
-  
-  return newApp;
 }
 
 async function fetchSubcollection(applicationId: string, subcollectionName: string) {
     const subcollectionRef = collection(db, 'applications', applicationId, subcollectionName);
-    const snapshot = await getDocs(subcollectionRef);
-    return snapshot.docs.map(doc => ({ ...convertTimestampsToDates(doc.data()), id: doc.id }));
+    try {
+        const snapshot = await getDocs(subcollectionRef);
+        return snapshot.docs.map(doc => ({ ...convertTimestampsToDates(doc.data()), id: doc.id }));
+    } catch(e) {
+        if (e instanceof FirestoreError && e.code === 'permission-denied') {
+            const error = new FirestorePermissionError('list', subcollectionRef.path, e);
+            errorEmitter.emit('permission-error', error);
+        }
+        return [];
+    }
 }

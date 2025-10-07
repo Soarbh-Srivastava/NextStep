@@ -58,8 +58,8 @@ export default function LoginPage() {
               <Chrome className="mr-2 h-4 w-4" />
               Sign in with Google
             </Button>
-            <div className="text-center text-sm">
-              <Link href="/" className="underline">
+            <div className="text-center text-sm text-muted-foreground">
+              <Link href="/" className="underline hover:text-primary">
                 Back to homepage
               </Link>
             </div>

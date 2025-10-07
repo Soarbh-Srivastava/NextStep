@@ -1,1 +1,5 @@
-// Flows will be imported for their side effects in this file.
+import { config } from 'dotenv';
+config();
+
+import '@/ai/flows/analytics-sql-generator.ts';
+import '@/ai/flows/parse-application-email.ts';

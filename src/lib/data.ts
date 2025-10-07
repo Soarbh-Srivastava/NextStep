@@ -1,0 +1,184 @@
+import type { Application, ApplicationStatus } from './types';
+
+const today = new Date();
+const subtractDays = (date: Date, days: number) => {
+  const result = new Date(date);
+  result.setDate(result.getDate() - days);
+  return result;
+};
+
+export const applications: Application[] = [
+  {
+    id: 'app-001',
+    userId: 'user-1',
+    companyName: 'Innovate Inc.',
+    title: 'Senior Frontend Developer',
+    sourceName: 'LinkedIn',
+    appliedAt: subtractDays(today, 2),
+    status: 'INTERVIEW',
+    location: 'Remote',
+    url: 'https://linkedin.com/jobs/view/12345',
+    tags: ['react', 'typescript', 'remote'],
+    notes: [
+      { id: 'note-1', applicationId: 'app-001', text: 'First interview went well. Spoke with Sarah.', createdAt: subtractDays(today, 1) },
+    ],
+    events: [
+        { id: 'event-1', applicationId: 'app-001', type: 'applied', occurredAt: subtractDays(today, 2) },
+        { id: 'event-2', applicationId: 'app-001', type: 'first_response', occurredAt: subtractDays(today, 2) },
+        { id: 'event-3', applicationId: 'app-001', type: 'interview_scheduled', metadata: { date: subtractDays(today, 1), with: 'Sarah' }, occurredAt: subtractDays(today, 1) },
+    ],
+    createdAt: subtractDays(today, 2),
+    updatedAt: subtractDays(today, 1),
+  },
+  {
+    id: 'app-002',
+    userId: 'user-1',
+    companyName: 'DataDriven Co.',
+    title: 'Data Scientist',
+    sourceName: 'Indeed',
+    appliedAt: subtractDays(today, 5),
+    status: 'APPLIED',
+    location: 'New York, NY',
+    url: 'https://indeed.com/jobs/view/67890',
+    tags: ['python', 'machine-learning'],
+    notes: [],
+    events: [
+      { id: 'event-4', applicationId: 'app-002', type: 'applied', occurredAt: subtractDays(today, 5) },
+    ],
+    createdAt: subtractDays(today, 5),
+    updatedAt: subtractDays(today, 5),
+  },
+  {
+    id: 'app-003',
+    userId: 'user-1',
+    companyName: 'SecureSoft',
+    title: 'Cybersecurity Analyst',
+    sourceName: 'Company Site',
+    appliedAt: subtractDays(today, 10),
+    status: 'REJECTED',
+    location: 'Austin, TX',
+    tags: ['security', 'aws'],
+    notes: [{ id: 'note-2', applicationId: 'app-003', text: 'Received automated rejection email.', createdAt: subtractDays(today, 8) }],
+    events: [
+        { id: 'event-5', applicationId: 'app-003', type: 'applied', occurredAt: subtractDays(today, 10) },
+        { id: 'event-6', applicationId: 'app-003', type: 'first_response', occurredAt: subtractDays(today, 9) },
+        { id: 'event-7', applicationId: 'app-003', type: 'rejected', occurredAt: subtractDays(today, 8) },
+    ],
+    createdAt: subtractDays(today, 10),
+    updatedAt: subtractDays(today, 8),
+  },
+  {
+    id: 'app-004',
+    userId: 'user-1',
+    companyName: 'Creative LLC',
+    title: 'UI/UX Designer',
+    sourceName: 'Email',
+    appliedAt: subtractDays(today, 12),
+    status: 'OFFER',
+    location: 'Remote',
+    salary: '$120,000',
+    tags: ['figma', 'design-system'],
+    notes: [{ id: 'note-3', applicationId: 'app-004', text: 'Received offer, contemplating.', createdAt: subtractDays(today, 1) }],
+    events: [
+        { id: 'event-8', applicationId: 'app-004', type: 'applied', occurredAt: subtractDays(today, 12) },
+        { id: 'event-9', applicationId: 'app-004', type: 'first_response', occurredAt: subtractDays(today, 11) },
+        { id: 'event-10', applicationId: 'app-004', type: 'interview_scheduled', occurredAt: subtractDays(today, 7) },
+        { id: 'event-11', applicationId: 'app-004', type: 'offer', occurredAt: subtractDays(today, 1) },
+    ],
+    createdAt: subtractDays(today, 12),
+    updatedAt: subtractDays(today, 1),
+  },
+    {
+    id: 'app-005',
+    userId: 'user-1',
+    companyName: 'Innovate Inc.',
+    title: 'Backend Engineer',
+    sourceName: 'LinkedIn',
+    appliedAt: subtractDays(today, 15),
+    status: 'PHONE_SCREEN',
+    location: 'Remote',
+    tags: ['golang', 'kubernetes'],
+    notes: [],
+    events: [
+        { id: 'event-12', applicationId: 'app-005', type: 'applied', occurredAt: subtractDays(today, 15) },
+        { id: 'event-13', applicationId: 'app-005', type: 'first_response', occurredAt: subtractDays(today, 14) },
+        { id: 'event-14', applicationId: 'app-005', type: 'phone_screen_scheduled', occurredAt: subtractDays(today, 12) },
+    ],
+    createdAt: subtractDays(today, 15),
+    updatedAt: subtractDays(today, 12),
+  },
+  {
+    id: 'app-006',
+    userId: 'user-1',
+    companyName: 'HealthWell',
+    title: 'Product Manager',
+    sourceName: 'Indeed',
+    appliedAt: subtractDays(today, 20),
+    status: 'WITHDRAWN',
+    location: 'Boston, MA',
+    tags: ['healthcare', 'product'],
+    notes: [{ id: 'note-4', applicationId: 'app-006', text: 'Withdrew application due to accepting another offer.', createdAt: subtractDays(today, 1) }],
+    events: [
+        { id: 'event-15', applicationId: 'app-006', type: 'applied', occurredAt: subtractDays(today, 20) },
+        { id: 'event-16', applicationId: 'app-006', type: 'withdrawn', occurredAt: subtractDays(today, 1) },
+    ],
+    createdAt: subtractDays(today, 20),
+    updatedAt: subtractDays(today, 1),
+  },
+  {
+    id: 'app-007',
+    userId: 'user-1',
+    companyName: 'Innovate Inc.',
+    title: 'DevOps Engineer',
+    sourceName: 'LinkedIn',
+    appliedAt: subtractDays(today, 3),
+    status: 'APPLIED',
+    location: 'Remote',
+    url: 'https://linkedin.com/jobs/view/12345',
+    tags: ['aws', 'ci/cd', 'remote'],
+    notes: [],
+    events: [
+        { id: 'event-1', applicationId: 'app-007', type: 'applied', occurredAt: subtractDays(today, 3) },
+    ],
+    createdAt: subtractDays(today, 3),
+    updatedAt: subtractDays(today, 3),
+  },
+];
+
+const getStatusCount = (status: ApplicationStatus) => applications.filter(app => app.status === status).length;
+
+export const analyticsData = {
+    applicationsBySource: [
+        { source: "LinkedIn", count: 3 },
+        { source: "Indeed", count: 2 },
+        { source: "Company Site", count: 1 },
+        { source: "Email", count: 1 },
+    ],
+    funnel: {
+        applied: applications.length,
+        viewed: applications.filter(app => ['VIEWED', 'PHONE_SCREEN', 'INTERVIEW', 'OFFER', 'REJECTED'].includes(app.status)).length,
+        interview: getStatusCount('INTERVIEW') + getStatusCount('OFFER') + getStatusCount('PHONE_SCREEN'),
+        offer: getStatusCount('OFFER')
+    },
+    avgHoursToFirstResponse: 28.3,
+    weeklySeries: [
+        { week: 'Week 1', count: 2 },
+        { week: 'Week 2', count: 3 },
+        { week: 'Week 3', count: 1 },
+        { week: 'Week 4', count: 1 },
+    ],
+};
+
+export const funnelData = [
+    { name: 'Applied', value: analyticsData.funnel.applied, fill: 'hsl(var(--chart-1))' },
+    { name: 'Viewed', value: analyticsData.funnel.viewed, fill: 'hsl(var(--chart-2))' },
+    { name: 'Interview', value: analyticsData.funnel.interview, fill: 'hsl(var(--chart-3))' },
+    { name: 'Offer', value: analyticsData.funnel.offer, fill: 'hsl(var(--chart-4))' },
+]
+
+export const weeklyData = [
+    { date: '2024-06-24', applications: 2 },
+    { date: '2024-07-01', applications: 3 },
+    { date: '2024-07-08', applications: 1 },
+    { date: '2024-07-15', applications: 1 },
+]

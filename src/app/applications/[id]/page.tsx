@@ -37,7 +37,7 @@ const statusColors: Record<ApplicationStatus, string> = {
 
 
 export default function ApplicationDetailPage({ params }: { params: { id: string } }) {
-  const { id } = params;
+  const id = params.id;
   const [application, setApplication] = useState<Application | null | undefined>(undefined);
 
   useEffect(() => {

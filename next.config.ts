@@ -30,6 +30,22 @@ const nextConfig: NextConfig = {
       },
     ],
   },
+  experimental: {
+    serverComponentsExternalPackages: ['@genkit-ai/google-genai'],
+    outputFileTracingExcludes: {
+      '*': [
+        './.genkit',
+        './.firebase',
+        './.idea',
+        './.vscode',
+        './.gitignore',
+        './.env.local',
+        './.env.development.local',
+        './.env.test.local',
+        './.env.production.local',
+      ],
+    },
+  },
 };
 
 export default nextConfig;

@@ -1,7 +1,8 @@
 import { ApplicationEvent } from "@/lib/types";
 import { Card, CardContent, CardDescription, CardHeader, CardTitle } from "@/components/ui/card";
-import { CheckCircle, Circle, Briefcase, Phone, Users, Award, XCircle, Mail, MessageSquare, Laptop, Code, UserCheck } from "lucide-react";
-import { format } from "date-fns";
+import { CheckCircle, Circle, Briefcase, Phone, Users, Award, XCircle, Mail, MessageSquare, Laptop, Code, UserCheck, CalendarPlus } from "lucide-react";
+import { format, formatISO } from "date-fns";
+import { Button } from "../ui/button";
 
 type TimelineProps = {
     events: ApplicationEvent[];
@@ -27,6 +28,30 @@ const getEventTitle = (type: string) => {
     return type.split('_').map(word => word.charAt(0).toUpperCase() + word.slice(1)).join(' ');
 }
 
+// Helper to create Google Calendar link
+const createGoogleCalendarLink = (event: ApplicationEvent, title: string) => {
+    const startTime = new Date(event.occurredAt);
+    const endTime = new Date(startTime.getTime() + 60 * 60 * 1000); // Assume 1 hour duration
+
+    const formatForGoogle = (date: Date) => {
+        return formatISO(date, { format: 'basic' }).replace(/-|:|\.\d{3}/g, '');
+    };
+
+    const params = new URLSearchParams({
+        action: 'TEMPLATE',
+        text: `${getEventTitle(event.type)}: ${title}`,
+        dates: `${formatForGoogle(startTime)}/${formatForGoogle(endTime)}`,
+        details: event.metadata?.note || `Job application event for ${title}.`,
+    });
+
+    if (event.metadata?.location) {
+        params.append('location', event.metadata.location);
+    }
+
+    return `https://www.google.com/calendar/render?${params.toString()}`;
+};
+
+
 export default function ApplicationTimeline({ events, children }: TimelineProps) {
     const sortedEvents = [...events].sort((a, b) => new Date(b.occurredAt).getTime() - new Date(a.occurredAt).getTime());
 
@@ -48,9 +73,18 @@ export default function ApplicationTimeline({ events, children }: TimelineProps)
                                 <div className="relative z-10 flex h-10 w-10 items-center justify-center rounded-full bg-background border-2 border-primary">
                                     {eventIcons[event.type] || <Circle className="h-5 w-5" />}
                                 </div>
-                                <div className="grid gap-1 pt-1.5">
-                                    <h3 className="font-semibold">{getEventTitle(event.type)}</h3>
-                                    <time className="text-sm text-muted-foreground">{format(event.occurredAt, 'PPP p')}</time>
+                                <div className="grid gap-1 pt-1.5 flex-1">
+                                    <div className="flex justify-between items-start">
+                                        <div>
+                                            <h3 className="font-semibold">{getEventTitle(event.type)}</h3>
+                                            <time className="text-sm text-muted-foreground">{format(event.occurredAt, 'PPP p')}</time>
+                                        </div>
+                                        <Button asChild variant="ghost" size="icon" className="h-8 w-8 shrink-0">
+                                            <a href={createGoogleCalendarLink(event, 'Application')} target="_blank" rel="noopener noreferrer" title="Add to Google Calendar">
+                                                <CalendarPlus className="h-4 w-4 text-muted-foreground"/>
+                                            </a>
+                                        </Button>
+                                    </div>
                                     {event.metadata?.note && <p className="text-sm text-muted-foreground">{event.metadata.note}</p>}
                                     {event.metadata?.with && <p className="text-sm text-muted-foreground">With: {event.metadata.with}</p>}
                                 </div>

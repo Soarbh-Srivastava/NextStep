@@ -5,15 +5,41 @@ import { getApplicationsList } from '@/lib/storage';
 import { Application, ApplicationEvent } from '@/lib/types';
 import PageHeader from '@/components/layout/page-header';
 import { Card, CardContent, CardHeader, CardTitle } from '@/components/ui/card';
-import { Loader2 } from 'lucide-react';
-import { format } from 'date-fns';
+import { Button } from '@/components/ui/button';
+import { CalendarPlus, Loader2 } from 'lucide-react';
+import { format, formatISO } from 'date-fns';
 import { toZonedTime } from 'date-fns-tz';
 import Link from 'next/link';
 
 type AugmentedEvent = ApplicationEvent & {
     applicationTitle: string;
     companyName: string;
+    location?: string;
 };
+
+// Helper to create Google Calendar link
+const createGoogleCalendarLink = (event: AugmentedEvent) => {
+    const startTime = new Date(event.occurredAt);
+    const endTime = new Date(startTime.getTime() + 60 * 60 * 1000); // Assume 1 hour duration
+
+    const formatForGoogle = (date: Date) => {
+        return formatISO(date, { format: 'basic' }).replace(/-|:|\.\d{3}/g, '');
+    };
+
+    const params = new URLSearchParams({
+        action: 'TEMPLATE',
+        text: `${event.type.replace(/_/g, ' ')}: ${event.applicationTitle} at ${event.companyName}`,
+        dates: `${formatForGoogle(startTime)}/${formatForGoogle(endTime)}`,
+        details: event.metadata?.note || `Job application event for ${event.applicationTitle}.`,
+    });
+
+    if (event.location) {
+        params.append('location', event.location);
+    }
+
+    return `https://www.google.com/calendar/render?${params.toString()}`;
+};
+
 
 export default function CalendarPage() {
     const { user } = useAuth();
@@ -24,18 +50,7 @@ export default function CalendarPage() {
         async function loadEvents() {
             if (!user) return;
             setLoading(true);
-
-            // This is not ideal as it fetches all applications and then all sub-collections
-            // A more optimized approach would be a dedicated query if performance becomes an issue
             const apps = await getApplicationsList(user.uid);
-            
-            // This is a simplified fetch, we don't have a getApplicationById that includes events
-            // We'll need to modify the data fetching logic or accept this limitation for now
-            // For this implementation, let's assume events are part of the list for simplicity
-            // NOTE: getApplicationsList does not return events. This will be an empty page.
-            // I need to fetch each application's events separately.
-            
-            // Re-fetching full application data is necessary as getApplicationsList is shallow
             const { getApplicationById } = await import('@/lib/storage');
             const fullApps = await Promise.all(apps.map(app => getApplicationById(app.id)));
 
@@ -46,6 +61,7 @@ export default function CalendarPage() {
                     applicationId: app.id,
                     applicationTitle: app.title,
                     companyName: app.companyName,
+                    location: app.location
                 }));
             });
 
@@ -110,6 +126,12 @@ export default function CalendarPage() {
                                                             </Link>
                                                         </p>
                                                     </div>
+                                                    <Button asChild variant="outline" size="sm">
+                                                        <a href={createGoogleCalendarLink(event)} target="_blank" rel="noopener noreferrer">
+                                                            <CalendarPlus className="mr-2 h-4 w-4"/>
+                                                            Add to Calendar
+                                                        </a>
+                                                    </Button>
                                                 </div>
                                             </CardHeader>
                                             {event.metadata?.note && (

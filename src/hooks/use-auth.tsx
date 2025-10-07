@@ -26,27 +26,29 @@ export const AuthProvider = ({ children }: { children: ReactNode }) => {
     const unsubscribe = onAuthStateChanged(auth, (user) => {
       setUser(user);
       setLoading(false);
+
+      const isAuthRoute = authRoutes.some(route => pathname.startsWith(route)) || pathname.startsWith('/applications/');
+
+      if (user) {
+        // If user is logged in, redirect from public-only pages like login
+        if (pathname === '/login' || pathname === '/') {
+          router.push('/dashboard');
+        }
+      } else {
+        // If user is not logged in, redirect from protected routes
+        if (isAuthRoute) {
+          router.push('/login');
+        }
+      }
     });
 
     return () => unsubscribe();
-  }, []);
-
-  useEffect(() => {
-    if (loading) return;
-
-    const isAuthRoute = authRoutes.some(route => pathname.startsWith(route)) || pathname.startsWith('/applications/');
-
-    if (!user && isAuthRoute) {
-      router.push('/login');
-    }
-
-    if (user && (pathname === '/login' || pathname === '/')) {
-      router.push('/dashboard');
-    }
-  }, [user, loading, router, pathname]);
+  }, [pathname, router]);
 
   const isAuthRoute = authRoutes.some(route => pathname.startsWith(route)) || pathname.startsWith('/applications/');
 
+  // Show a loader while auth state is resolving, or if a redirect is imminent.
+  // This prevents content flashing and ensures users don't see pages they shouldn't.
   if (loading || (!user && isAuthRoute) || (user && (pathname === '/login' || pathname === '/'))) {
     return (
         <div className="flex h-screen w-full items-center justify-center">
@@ -54,6 +56,7 @@ export const AuthProvider = ({ children }: { children: ReactNode }) => {
         </div>
     );
   }
+
 
   return <AuthContext.Provider value={{ user, loading }}>{children}</AuthContext.Provider>;
 };

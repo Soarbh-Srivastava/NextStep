@@ -11,6 +11,7 @@ import {
   GoogleAuthProvider,
   createUserWithEmailAndPassword,
   signInWithEmailAndPassword,
+  signInWithRedirect,
 } from 'firebase/auth';
 import { auth } from '@/lib/firebase';
 import { useAuth } from '@/hooks/use-auth';
@@ -65,20 +66,19 @@ export default function LoginPage() {
   });
 
   const handleGoogleSignIn = async () => {
-    // This function will be updated as per user's request.
-    // The current implementation is a placeholder.
     setIsGoogleSubmitting(true);
     const provider = new GoogleAuthProvider();
-    // signInWithRedirect(auth, provider);
-    // For now, we'll just log to console to avoid breaking the app
-    console.log("Attempting Google Sign-In. A redirect-based flow will be implemented here.");
-    setTimeout(() => {
+    try {
+      await signInWithRedirect(auth, provider);
+    } catch (error) {
+        console.error("Google Sign-In failed:", error);
         toast({
-            title: "Google Sign-In",
-            description: "This feature is being updated to work reliably on all devices."
-        })
-        setIsGoogleSubmitting(false)
-    }, 1500)
+            variant: "destructive",
+            title: "Google Sign-In Failed",
+            description: "Could not sign in with Google. Please try again."
+        });
+        setIsGoogleSubmitting(false);
+    }
   };
 
   const handleRegister = async (values: AuthFormValues) => {

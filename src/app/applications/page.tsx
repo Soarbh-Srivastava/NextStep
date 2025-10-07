@@ -10,9 +10,17 @@ import { Application } from '@/lib/types';
 
 export default function ApplicationsPage() {
   const [applications, setApplications] = useState<Application[]>([]);
+  const [loading, setLoading] = useState(true);
 
   useEffect(() => {
-    setApplications(getApplications());
+    async function loadData() {
+      setLoading(true);
+      // Assuming a default user for now
+      const apps = await getApplications('user-1');
+      setApplications(apps);
+      setLoading(false);
+    }
+    loadData();
   }, []);
 
   return (
@@ -29,7 +37,7 @@ export default function ApplicationsPage() {
         </Button>
       </PageHeader>
       <main className="p-4 sm:px-6 sm:py-0">
-        <ApplicationsTable data={applications} />
+        {loading ? <p>Loading applications...</p> : <ApplicationsTable data={applications} />}
       </main>
     </div>
   );

@@ -27,13 +27,14 @@ import {
 } from '@/components/ui/popover';
 import { Calendar } from '@/components/ui/calendar';
 import { Textarea } from '@/components/ui/textarea';
-import { CalendarIcon } from 'lucide-react';
+import { CalendarIcon, Loader2 } from 'lucide-react';
 import { cn } from '@/lib/utils';
 import { format } from 'date-fns';
 import { ApplicationStatus } from '@/lib/types';
 import { useToast } from '@/hooks/use-toast';
 import { saveApplication } from '@/lib/storage';
 import { useRouter } from 'next/navigation';
+import { useState } from 'react';
 
 const applicationSchema = z.object({
   title: z.string().min(2, 'Title must be at least 2 characters.'),
@@ -53,12 +54,13 @@ const applicationSchema = z.object({
   salary: z.string().optional(),
   url: z.string().url('Please enter a valid URL.').optional().or(z.literal('')),
   notes: z.string().optional(),
-  userId: z.string().default('user-1'), // Added default userId
+  userId: z.string().default('user-1'),
 });
 
 export default function ApplicationForm() {
   const { toast } = useToast();
   const router = useRouter();
+  const [isSaving, setIsSaving] = useState(false);
   const form = useForm<z.infer<typeof applicationSchema>>({
     resolver: zodResolver(applicationSchema),
     defaultValues: {
@@ -74,14 +76,26 @@ export default function ApplicationForm() {
     },
   });
 
-  function onSubmit(values: z.infer<typeof applicationSchema>) {
-    const newApplication = saveApplication(values);
-    toast({
-      title: 'Application Saved!',
-      description: `${values.title} at ${values.companyName} has been added.`,
-    });
-    form.reset();
-    router.push(`/applications/${newApplication.id}`);
+  async function onSubmit(values: z.infer<typeof applicationSchema>) {
+    setIsSaving(true);
+    try {
+      const newApplication = await saveApplication(values);
+      toast({
+        title: 'Application Saved!',
+        description: `${values.title} at ${values.companyName} has been added.`,
+      });
+      form.reset();
+      router.push(`/applications/${newApplication.id}`);
+    } catch (error) {
+        console.error("Failed to save application:", error);
+        toast({
+            variant: "destructive",
+            title: "Uh oh! Something went wrong.",
+            description: "There was a problem saving your application. Please try again.",
+        });
+    } finally {
+        setIsSaving(false);
+    }
   }
 
   return (
@@ -263,7 +277,10 @@ export default function ApplicationForm() {
             )}
         />
         <div className="flex justify-end">
-            <Button type="submit">Save Application</Button>
+            <Button type="submit" disabled={isSaving}>
+                {isSaving && <Loader2 className="mr-2 h-4 w-4 animate-spin" />}
+                Save Application
+            </Button>
         </div>
       </form>
     </Form>

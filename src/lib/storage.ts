@@ -1,80 +1,118 @@
 'use client';
 
-import { Application, Note, ApplicationEvent } from './types';
-import { applications as seedData } from './data';
+import { Application, Note } from './types';
+import { db } from './firebase';
+import {
+  collection,
+  query,
+  where,
+  getDocs,
+  getDoc,
+  doc,
+  addDoc,
+  Timestamp,
+} from 'firebase/firestore';
 
-const APPLICATIONS_KEY = 'jobtrack_applications';
-
-function getStoredApplications(): Application[] {
-  if (typeof window === 'undefined') {
-    return [];
+// Helper to convert Firestore Timestamps to Dates in a deeply nested object
+function convertTimestampsToDates(obj: any): any {
+  if (obj === null || typeof obj !== 'object') {
+    return obj;
   }
-  const storedData = localStorage.getItem(APPLICATIONS_KEY);
-  if (storedData) {
-    try {
-      const parsed = JSON.parse(storedData);
-      // Dates are stored as strings in JSON, so we need to convert them back
-      return parsed.map((app: any) => ({
-        ...app,
-        appliedAt: new Date(app.appliedAt),
-        createdAt: new Date(app.createdAt),
-        updatedAt: new Date(app.updatedAt),
-        notes: app.notes.map((note: any) => ({...note, createdAt: new Date(note.createdAt)})),
-        events: app.events.map((event: any) => ({...event, occurredAt: new Date(event.occurredAt)}))
-      }));
-    } catch (error) {
-      console.error('Error parsing applications from localStorage:', error);
-      return [];
+
+  if (obj instanceof Timestamp) {
+    return obj.toDate();
+  }
+
+  if (Array.isArray(obj)) {
+    return obj.map(convertTimestampsToDates);
+  }
+
+  const newObj: { [key: string]: any } = {};
+  for (const key in obj) {
+    if (Object.prototype.hasOwnProperty.call(obj, key)) {
+      newObj[key] = convertTimestampsToDates(obj[key]);
     }
+  }
+  return newObj;
+}
+
+
+export async function getApplications(userId: string = 'user-1'): Promise<Application[]> {
+  const q = query(collection(db, 'applications'), where('userId', '==', userId));
+  const querySnapshot = await getDocs(q);
+  const applications = querySnapshot.docs.map(doc => {
+    const data = doc.data();
+    const appWithDates = convertTimestampsToDates(data);
+    return {
+      ...appWithDates,
+      id: doc.id,
+    } as Application;
+  });
+  return applications;
+}
+
+export async function getApplicationById(id: string): Promise<Application | undefined> {
+  const docRef = doc(db, 'applications', id);
+  const docSnap = await getDoc(docRef);
+
+  if (docSnap.exists()) {
+    const data = docSnap.data();
+    const appWithDates = convertTimestampsToDates(data);
+    return { ...appWithDates, id: docSnap.id } as Application;
   } else {
-    // If no data, seed it from the data file
-    setStoredApplications(seedData);
-    return seedData;
+    return undefined;
   }
 }
 
-function setStoredApplications(applications: Application[]) {
-    if (typeof window === 'undefined') return;
-    localStorage.setItem(APPLICATIONS_KEY, JSON.stringify(applications));
+export async function saveApplication(
+  applicationData: Omit<Application, 'id' | 'createdAt' | 'updatedAt' | 'events' | 'notes'> & { notes?: string }
+): Promise<Application> {
+  const now = new Date();
+  const appliedAt = applicationData.appliedAt instanceof Date ? applicationData.appliedAt : new Date();
+
+  // Create the main application document data
+  const appDocData = {
+      ...applicationData,
+      appliedAt: Timestamp.fromDate(appliedAt),
+      createdAt: Timestamp.fromDate(now),
+      updatedAt: Timestamp.fromDate(now),
+      tags: [],
+  };
+  // We handle notes and events separately
+  delete (appDocData as any).notes;
+
+
+  // Add the application document
+  const docRef = await addDoc(collection(db, 'applications'), appDocData);
+  const newId = docRef.id;
+
+  // Add the initial 'applied' event
+  const eventCollRef = collection(db, 'applications', newId, 'events');
+  await addDoc(eventCollRef, {
+      type: 'applied',
+      occurredAt: Timestamp.fromDate(appliedAt),
+  });
+
+  // Add initial note if present
+  if (applicationData.notes) {
+      const notesCollRef = collection(db, 'applications', newId, 'notes');
+      await addDoc(notesCollRef, {
+          text: applicationData.notes,
+          createdAt: Timestamp.fromDate(now),
+      });
+  }
+
+  // Fetch the newly created application to return it
+  const newApp = await getApplicationById(newId);
+  if (!newApp) {
+      throw new Error("Failed to retrieve newly created application");
+  }
+  
+  return newApp;
 }
 
-export function getApplications(): Application[] {
-    return getStoredApplications();
-}
-
-export function getApplicationById(id: string): Application | undefined {
-    const applications = getStoredApplications();
-    return applications.find(app => app.id === id);
-}
-
-export function saveApplication(applicationData: Omit<Application, 'id' | 'createdAt' | 'updatedAt' | 'events' | 'notes'> & { notes?: string }) {
-    const applications = getStoredApplications();
-    const id = `app-${Date.now()}`;
-    const now = new Date();
-    
-    const notes: Note[] = [];
-    if (applicationData.notes) {
-        notes.push({
-            id: `note-${Date.now()}`,
-            applicationId: id,
-            text: applicationData.notes,
-            createdAt: now,
-        });
-    }
-
-    const newApplication: Application = {
-        ...applicationData,
-        id,
-        notes,
-        tags: [],
-        events: [
-            { id: `event-${Date.now()}`, applicationId: id, type: 'applied', occurredAt: applicationData.appliedAt }
-        ],
-        createdAt: now,
-        updatedAt: now,
-    };
-
-    const newApplications = [...applications, newApplication];
-    setStoredApplications(newApplications);
-    return newApplication;
+async function fetchSubcollection(applicationId: string, subcollectionName: string) {
+    const subcollectionRef = collection(db, 'applications', applicationId, subcollectionName);
+    const snapshot = await getDocs(subcollectionRef);
+    return snapshot.docs.map(doc => ({ ...convertTimestampsToDates(doc.data()), id: doc.id }));
 }

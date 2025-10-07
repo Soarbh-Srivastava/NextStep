@@ -40,8 +40,11 @@ export default function ApplicationDetailPage({ params }: { params: Promise<{ id
   const [application, setApplication] = useState<Application | null | undefined>(undefined);
 
   useEffect(() => {
-    const app = getApplicationById(id);
-    setApplication(app);
+    async function loadApplication() {
+        const app = await getApplicationById(id);
+        setApplication(app);
+    }
+    loadApplication();
   }, [id]);
 
 
@@ -80,7 +83,7 @@ export default function ApplicationDetailPage({ params }: { params: Promise<{ id
 
       <main className="grid flex-1 items-start gap-4 p-4 sm:px-6 sm:py-0 md:gap-8 lg:grid-cols-3 xl:grid-cols-3">
         <div className="grid auto-rows-max items-start gap-4 md:gap-8 lg:col-span-2">
-            <ApplicationTimeline events={events} />
+            <ApplicationTimeline events={events || []} />
 
             {notes && notes.length > 0 && (
                 <Card>

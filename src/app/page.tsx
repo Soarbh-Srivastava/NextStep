@@ -20,10 +20,26 @@ import { eachDayOfInterval, startOfWeek, endOfWeek, format, differenceInHours } 
 
 export default function Dashboard() {
   const [applications, setApplications] = useState<Application[]>([]);
+  const [loading, setLoading] = useState(true);
 
   useEffect(() => {
-    setApplications(getApplications());
+    async function loadData() {
+      setLoading(true);
+      // Pass a user ID, assuming 'user-1' for now
+      const apps = await getApplications('user-1');
+      setApplications(apps);
+      setLoading(false);
+    }
+    loadData();
   }, []);
+
+  if (loading) {
+    return (
+      <div className="flex justify-center items-center h-64">
+        <p>Loading dashboard...</p>
+      </div>
+    );
+  }
 
   const totalApplications = applications.length;
   const totalOffers = applications.filter(
@@ -62,13 +78,13 @@ export default function Dashboard() {
 
 
   const firstResponseApplications = applications.filter(app => {
-    const firstResponseEvent = app.events.find(e => e.type === 'first_response');
+    const firstResponseEvent = app.events?.find(e => e.type === 'first_response');
     return firstResponseEvent;
   });
 
   const avgHoursToFirstResponse = firstResponseApplications.length > 0 ? firstResponseApplications.reduce((totalHours, app) => {
-      const appliedEvent = app.events.find(e => e.type === 'applied');
-      const firstResponseEvent = app.events.find(e => e.type === 'first_response');
+      const appliedEvent = app.events?.find(e => e.type === 'applied');
+      const firstResponseEvent = app.events?.find(e => e.type === 'first_response');
       if (appliedEvent && firstResponseEvent) {
           return totalHours + differenceInHours(firstResponseEvent.occurredAt, appliedEvent.occurredAt);
       }

@@ -228,7 +228,18 @@ export async function addApplicationEvent(applicationId: string, eventData: Omit
 
         // Also update the application's updatedAt timestamp
         const appDocRef = doc(db, 'applications', applicationId);
-        await updateDoc(appDocRef, { updatedAt: Timestamp.now() });
+        const updateData = { updatedAt: Timestamp.now() };
+        await updateDoc(appDocRef, updateData).catch(e => {
+            if (e instanceof FirestoreError && e.code === 'permission-denied') {
+                errorEmitter.emit('permission-error', new FirestorePermissionError({
+                    operation: 'update',
+                    path: appDocRef.path,
+                    requestResourceData: updateData
+                }));
+            }
+            throw e;
+        });
+
 
         return { ...eventData, id: docRef.id, applicationId };
 

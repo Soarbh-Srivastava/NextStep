@@ -21,13 +21,16 @@ export default function LandingPage() {
           </Button>
         </nav>
       </header>
-      <main>
+      <main className="grid md:grid-cols-2 min-h-[calc(100vh-10rem)] items-center">
+        {/* Empty left container */}
+        <div className="hidden md:block"></div>
+
         <section className="py-20 md:py-32">
-          <div className="container mx-auto px-4 sm:px-6 lg:px-8 text-center">
+          <div className="container mx-auto px-4 sm:px-6 lg:px-8 text-center md:text-left">
             <h2 className="text-4xl font-bold tracking-tight sm:text-5xl lg:text-6xl">
               Take the Next Step in Your Career
             </h2>
-            <p className="mt-6 max-w-2xl mx-auto text-lg text-muted-foreground">
+            <p className="mt-6 max-w-2xl mx-auto md:mx-0 text-lg text-muted-foreground">
               NextStep is a personal job application tracker that helps you manage your job search, stay organized, and land your dream job.
             </p>
             <div className="mt-10">
@@ -39,6 +42,7 @@ export default function LandingPage() {
             </div>
           </div>
         </section>
+      </main>
 
         <section className="bg-muted py-20">
             <div className="container mx-auto px-4 sm:px-6 lg:px-8">
@@ -71,7 +75,6 @@ export default function LandingPage() {
                 </div>
             </div>
         </section>
-      </main>
       <footer className="container mx-auto px-4 sm:px-6 lg:px-8 py-6 text-center text-muted-foreground">
         <p>&copy; {new Date().getFullYear()} NextStep. All rights reserved.</p>
       </footer>

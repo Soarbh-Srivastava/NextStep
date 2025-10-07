@@ -28,11 +28,11 @@ export default function RootLayout({
             <div className="flex min-h-screen">
               <AppSidebar />
               <AppContent>
-                <FirebaseErrorListener />
                 {children}
               </AppContent>
             </div>
             <Toaster />
+            <FirebaseErrorListener />
           </SidebarProvider>
         </AuthProvider>
       </body>

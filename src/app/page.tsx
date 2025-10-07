@@ -13,7 +13,7 @@ import WeeklyApplicationsChart from '@/components/dashboard/weekly-applications-
 import PageHeader from '@/components/layout/page-header';
 
 import { getApplicationsList, getApplicationById } from '@/lib/storage';
-import { Activity, Briefcase, Target, Clock } from 'lucide-react';
+import { Activity, Briefcase, Target, Clock, Loader2 } from 'lucide-react';
 import { useEffect, useState } from 'react';
 import { Application, ApplicationStatus } from '@/lib/types';
 import { eachDayOfInterval, startOfWeek, endOfWeek, format, differenceInHours } from 'date-fns';
@@ -46,7 +46,8 @@ export default function Dashboard() {
   if (loading) {
     return (
       <div className="flex justify-center items-center h-64">
-        <p>Loading dashboard...</p>
+        <Loader2 className="h-8 w-8 animate-spin text-muted-foreground" />
+        <p className="ml-2">Loading dashboard...</p>
       </div>
     );
   }

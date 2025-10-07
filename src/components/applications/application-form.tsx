@@ -34,7 +34,7 @@ import { ApplicationStatus } from '@/lib/types';
 import { useToast } from '@/hooks/use-toast';
 import { saveApplication } from '@/lib/storage';
 import { useRouter } from 'next/navigation';
-import { useState } from 'react';
+import { useEffect, useState } from 'react';
 import { useAuth } from '@/hooks/use-auth';
 
 const applicationSchema = z.object({
@@ -55,7 +55,7 @@ const applicationSchema = z.object({
   salary: z.string().optional(),
   url: z.string().url('Please enter a valid URL.').optional().or(z.literal('')),
   notes: z.string().optional(),
-  userId: z.string(),
+  userId: z.string().min(1, "User ID is required."),
 });
 
 export default function ApplicationForm() {
@@ -79,6 +79,12 @@ export default function ApplicationForm() {
     },
   });
 
+  useEffect(() => {
+    if (user) {
+      form.setValue('userId', user.uid);
+    }
+  }, [user, form]);
+
   async function onSubmit(values: z.infer<typeof applicationSchema>) {
     if (!user) {
         toast({
@@ -98,17 +104,10 @@ export default function ApplicationForm() {
         });
         form.reset();
         router.push(`/applications/${newApplication.id}`);
-      } else {
-        // Error is handled by the emitter, but we might want a generic fallback toast
-        // Or we just let the destructive toast from the listener be the only feedback
       }
     } catch (error) {
+        // Errors are now handled by the global error listener, so we don't need a generic toast here.
         console.error("Failed to save application:", error);
-        toast({
-            variant: "destructive",
-            title: "Uh oh! Something went wrong.",
-            description: "There was a problem saving your application. Please try again.",
-        });
     } finally {
         setIsSaving(false);
     }
@@ -294,7 +293,7 @@ export default function ApplicationForm() {
             )}
         />
         <div className="flex justify-end">
-            <Button type="submit" disabled={isSaving}>
+            <Button type="submit" disabled={isSaving || !user}>
                 {isSaving && <Loader2 className="mr-2 h-4 w-4 animate-spin" />}
                 Save Application
             </Button>

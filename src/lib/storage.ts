@@ -40,7 +40,11 @@ function convertTimestampsToDates(obj: any): any {
 
 
 export async function getApplicationsList(userId: string): Promise<Omit<Application, 'notes' | 'events'>[]> {
-  if (!userId) return [];
+  if (!userId) {
+    // This should not happen if called correctly after auth check, but as a safeguard:
+    console.warn("getApplicationsList called without a userId.");
+    return [];
+  }
   const q = query(collection(db, 'applications'), where('userId', '==', userId));
   try {
     const querySnapshot = await getDocs(q);
@@ -57,6 +61,8 @@ export async function getApplicationsList(userId: string): Promise<Omit<Applicat
     if (e instanceof FirestoreError && e.code === 'permission-denied') {
         const error = new FirestorePermissionError({operation: 'list', path: `applications`});
         errorEmitter.emit('permission-error', error);
+    } else {
+        console.error("An unexpected error occurred in getApplicationsList:", e);
     }
     // Return empty array on error to prevent app crash
     return [];
@@ -115,7 +121,7 @@ export async function saveApplication(
         if (e instanceof FirestoreError && e.code === 'permission-denied') {
             errorEmitter.emit('permission-error', new FirestorePermissionError({
                 operation: 'create',
-                path: applicationsCollection.path,
+                path: `${applicationsCollection.path}/${appDocData.userId}`,
                 requestResourceData: appDocData
             }));
         }
@@ -159,8 +165,6 @@ export async function saveApplication(
     return newApp;
 
   } catch (e) {
-      // This will catch the re-thrown error from the first addDoc and any other synchronous errors.
-      // The permission error is already emitted, so we just log other unexpected errors.
       if (!(e instanceof FirestoreError && e.code === 'permission-denied')) {
         console.error("An unexpected error occurred during saveApplication:", e);
       }

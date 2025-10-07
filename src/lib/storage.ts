@@ -39,7 +39,8 @@ function convertTimestampsToDates(obj: any): any {
 }
 
 
-export async function getApplications(userId: string = 'user-1'): Promise<Application[]> {
+export async function getApplications(userId: string): Promise<Application[]> {
+  if (!userId) return [];
   const q = query(collection(db, 'applications'), where('userId', '==', userId));
   try {
     const querySnapshot = await getDocs(q);

@@ -7,21 +7,23 @@ import ApplicationsTable from '@/components/applications/applications-table';
 import { getApplications } from '@/lib/storage';
 import { useEffect, useState } from 'react';
 import { Application } from '@/lib/types';
+import { useAuth } from '@/hooks/use-auth';
 
 export default function ApplicationsPage() {
+  const { user } = useAuth();
   const [applications, setApplications] = useState<Application[]>([]);
   const [loading, setLoading] = useState(true);
 
   useEffect(() => {
     async function loadData() {
+      if (!user) return;
       setLoading(true);
-      // Assuming a default user for now
-      const apps = await getApplications('user-1');
+      const apps = await getApplications(user.uid);
       setApplications(apps);
       setLoading(false);
     }
     loadData();
-  }, []);
+  }, [user]);
 
   return (
     <div className="flex flex-col gap-4">

@@ -2,9 +2,11 @@ import type { Metadata } from 'next';
 import { Inter } from 'next/font/google';
 import './globals.css';
 import { Toaster } from '@/components/ui/toaster';
-import { SidebarProvider, Sidebar, SidebarInset } from '@/components/ui/sidebar';
+import { SidebarProvider } from '@/components/ui/sidebar';
 import AppSidebar from '@/components/layout/app-sidebar';
 import FirebaseErrorListener from '@/components/FirebaseErrorListener';
+import { AuthProvider } from '@/hooks/use-auth';
+import AppContent from '@/components/layout/app-content';
 
 const inter = Inter({ subsets: ['latin'], variable: '--font-inter' });
 
@@ -21,14 +23,16 @@ export default function RootLayout({
   return (
     <html lang="en" suppressHydrationWarning>
       <body className={`${inter.variable} font-body antialiased`}>
-        <FirebaseErrorListener />
-        <SidebarProvider>
-          <div className="flex min-h-screen">
-            <AppSidebar />
-            <SidebarInset className="flex-1">{children}</SidebarInset>
-          </div>
-          <Toaster />
-        </SidebarProvider>
+        <AuthProvider>
+            <FirebaseErrorListener />
+            <SidebarProvider>
+                <div className="flex min-h-screen">
+                    <AppSidebar />
+                    <AppContent>{children}</AppContent>
+                </div>
+                <Toaster />
+            </SidebarProvider>
+        </AuthProvider>
       </body>
     </html>
   );

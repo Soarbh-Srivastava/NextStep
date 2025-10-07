@@ -35,6 +35,7 @@ import { useToast } from '@/hooks/use-toast';
 import { saveApplication } from '@/lib/storage';
 import { useRouter } from 'next/navigation';
 import { useState } from 'react';
+import { useAuth } from '@/hooks/use-auth';
 
 const applicationSchema = z.object({
   title: z.string().min(2, 'Title must be at least 2 characters.'),
@@ -54,12 +55,13 @@ const applicationSchema = z.object({
   salary: z.string().optional(),
   url: z.string().url('Please enter a valid URL.').optional().or(z.literal('')),
   notes: z.string().optional(),
-  userId: z.string().default('user-1'),
+  userId: z.string(),
 });
 
 export default function ApplicationForm() {
   const { toast } = useToast();
   const router = useRouter();
+  const { user } = useAuth();
   const [isSaving, setIsSaving] = useState(false);
   const form = useForm<z.infer<typeof applicationSchema>>({
     resolver: zodResolver(applicationSchema),
@@ -73,13 +75,22 @@ export default function ApplicationForm() {
       salary: '',
       url: '',
       notes: '',
+      userId: user?.uid || '',
     },
   });
 
   async function onSubmit(values: z.infer<typeof applicationSchema>) {
+    if (!user) {
+        toast({
+            variant: "destructive",
+            title: "Authentication Error",
+            description: "You must be logged in to save an application.",
+        });
+        return;
+    }
     setIsSaving(true);
     try {
-      const newApplication = await saveApplication(values);
+      const newApplication = await saveApplication({ ...values, userId: user.uid });
       toast({
         title: 'Application Saved!',
         description: `${values.title} at ${values.companyName} has been added.`,

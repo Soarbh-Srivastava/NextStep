@@ -18,18 +18,35 @@ import {
   Settings,
   UserCircle,
   LogOut,
+  LogIn
 } from 'lucide-react';
 import Link from 'next/link';
+import { useAuth } from '@/hooks/use-auth';
+import { auth } from '@/lib/firebase';
+import { signOut } from 'firebase/auth';
+import { Avatar, AvatarFallback, AvatarImage } from '../ui/avatar';
+import {
+  DropdownMenu,
+  DropdownMenuContent,
+  DropdownMenuItem,
+  DropdownMenuLabel,
+  DropdownMenuSeparator,
+  DropdownMenuTrigger,
+} from '../ui/dropdown-menu';
 
 const navItems = [
   { href: '/', icon: <Home />, label: 'Dashboard' },
   { href: '/applications', icon: <Briefcase />, label: 'Applications' },
   { href: '/parse-email', icon: <Mail />, label: 'Parse Email' },
-  { href: '/settings', icon: <Settings />, label: 'Settings' },
 ];
 
 export default function AppSidebar() {
   const pathname = usePathname();
+  const { user } = useAuth();
+
+  const handleLogout = async () => {
+    await signOut(auth);
+  };
 
   return (
     <Sidebar>
@@ -64,17 +81,50 @@ export default function AppSidebar() {
       <SidebarFooter>
         <SidebarMenu>
           <SidebarMenuItem>
-            <SidebarMenuButton tooltip="Profile">
-              <UserCircle />
-              <span>User Profile</span>
-            </SidebarMenuButton>
+             <SidebarMenuButton
+                asChild
+                isActive={pathname.startsWith('/settings')}
+                tooltip={'Settings'}
+              >
+                <Link href={'/settings'}>
+                  <Settings />
+                  <span>Settings</span>
+                </Link>
+              </SidebarMenuButton>
           </SidebarMenuItem>
-          <SidebarMenuItem>
-            <SidebarMenuButton tooltip="Logout">
-              <LogOut />
-              <span>Logout</span>
-            </SidebarMenuButton>
-          </SidebarMenuItem>
+          {user ? (
+            <DropdownMenu>
+              <DropdownMenuTrigger asChild>
+                <SidebarMenuButton variant='outline' size='lg' className="justify-start w-full group-data-[collapsible=icon]:justify-center">
+                    <Avatar className="h-8 w-8">
+                        <AvatarImage src={user.photoURL || undefined} alt={user.displayName || 'User'} />
+                        <AvatarFallback>{user.displayName?.charAt(0) || user.email?.charAt(0)}</AvatarFallback>
+                    </Avatar>
+                    <div className="flex flex-col items-start truncate">
+                        <span className="font-semibold text-sm truncate">{user.displayName || 'User'}</span>
+                        <span className="text-xs text-muted-foreground truncate">{user.email}</span>
+                    </div>
+                </SidebarMenuButton>
+              </DropdownMenuTrigger>
+              <DropdownMenuContent side="right" align="end" className="w-56">
+                <DropdownMenuLabel>My Account</DropdownMenuLabel>
+                <DropdownMenuSeparator />
+                <DropdownMenuItem onClick={handleLogout}>
+                  <LogOut className="mr-2 h-4 w-4" />
+                  <span>Log out</span>
+                </DropdownMenuItem>
+              </DropdownMenuContent>
+            </DropdownMenu>
+          ) : (
+            <SidebarMenuItem>
+                <SidebarMenuButton tooltip="Login" asChild>
+                    <Link href="/login">
+                        <LogIn />
+                        <span>Login</span>
+                    </Link>
+                </SidebarMenuButton>
+            </SidebarMenuItem>
+          )}
         </SidebarMenu>
       </SidebarFooter>
     </Sidebar>

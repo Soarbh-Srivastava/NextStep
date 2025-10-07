@@ -17,21 +17,23 @@ import { Activity, Briefcase, Target, Clock } from 'lucide-react';
 import { useEffect, useState } from 'react';
 import { Application, ApplicationStatus } from '@/lib/types';
 import { eachDayOfInterval, startOfWeek, endOfWeek, format, differenceInHours } from 'date-fns';
+import { useAuth } from '@/hooks/use-auth';
 
 export default function Dashboard() {
+  const { user } = useAuth();
   const [applications, setApplications] = useState<Application[]>([]);
   const [loading, setLoading] = useState(true);
 
   useEffect(() => {
     async function loadData() {
+      if (!user) return;
       setLoading(true);
-      // Pass a user ID, assuming 'user-1' for now
-      const apps = await getApplications('user-1');
+      const apps = await getApplications(user.uid);
       setApplications(apps);
       setLoading(false);
     }
     loadData();
-  }, []);
+  }, [user]);
 
   if (loading) {
     return (
